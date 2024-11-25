@@ -11,7 +11,6 @@ import {ISingleRouter} from "./interfaces/ISingleRouter.sol";
 import {IConnector} from "./interfaces/IConnector.sol";
 import {SingleRouter} from "./SingleRouter.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import "hardhat/console.sol";
 
 contract SingleIdentifierID is AccessControl, EIP712 {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
@@ -257,7 +256,6 @@ contract SingleIdentifierID is AccessControl, EIP712 {
         bytes memory payload = MessageLib.encodeMessage(MessageLib.SendMessage(_schemaId, msg.sender, _expirationDate, _data, _metadata));
 
         uint256 fee = connector.quote(_registryChainId, payload);
-        console.log("TEST After fee", fee);
         connector.sendMessage{ value: fee }(_registryChainId, payload);
 
         emit SentRegisterSIDMessage(_schemaId, _connectorId, msg.sender, _registryChainId);
