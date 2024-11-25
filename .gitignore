@@ -1,0 +1,24 @@
+# Hardhat files
+cache
+artifacts
+typechain
+typechain-types
+
+# Tests
+coverage
+coverage.json
+
+# Lib
+node_modules
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Package manager
+package-error.log
+
+# Ignore all .env files except .env.example
+.env*
+!.env.example

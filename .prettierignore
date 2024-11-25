@@ -1,0 +1,12 @@
+# NPM packages
+node_modules
+
+# Hardhat files
+artifacts
+cache
+typechain-types
+deployments
+
+# Tests
+coverage
+coverage.json
