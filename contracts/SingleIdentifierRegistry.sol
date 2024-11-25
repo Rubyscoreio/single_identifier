@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.24;
 
-import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {SID, SIDSchema, SIDSchemaParams} from "./types/Structs.sol";
 import {ISingleIdentifierRegistry} from "./interfaces/ISingleIdentifierRegistry.sol";
 import {MessageLib} from "./lib/MessageLib.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {SingleRouter} from "./SingleRouter.sol";
 import {IConnector} from "./interfaces/IConnector.sol";
 
-contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessControl {
+contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712Upgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     string public constant NAME = "Rubyscore_Single_Identifier_Registry";
     string public constant VERSION = "0.0.1";
@@ -47,7 +48,15 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessCo
     error AddressIsZero();
     error SenderIsNotPeer(address sender);
 
-    constructor(address _operator) EIP712(NAME, VERSION) {
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _operator) external initializer {
+        __EIP712_init(NAME, VERSION);
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+
         if (_operator == address(0)) revert AddressIsZero();
 
         _grantRole(OPERATOR_ROLE, msg.sender);
@@ -150,6 +159,8 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessCo
         router = SingleRouter(_router);
         emit SetRouter(_router);
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(OPERATOR_ROLE) {}
 
     function _generateSchemaId(address _emitter, string calldata _schema) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(_emitter, _schema));

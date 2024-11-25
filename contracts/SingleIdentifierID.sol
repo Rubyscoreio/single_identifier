@@ -2,7 +2,10 @@
 pragma solidity =0.8.24;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {EIP712, MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Emitter} from "./types/Structs.sol";
 
 import {ISingleIdentifierRegistry} from "./interfaces/ISingleIdentifierRegistry.sol";
@@ -12,7 +15,7 @@ import {IConnector} from "./interfaces/IConnector.sol";
 import {SingleRouter} from "./SingleRouter.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract SingleIdentifierID is AccessControl, EIP712 {
+contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPSUpgradeable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     string public constant NAME = "Rubyscore_Single_Identifier_Id";
     string public constant VERSION = "0.0.1";
@@ -47,15 +50,27 @@ contract SingleIdentifierID is AccessControl, EIP712 {
     error ExpirationDateInvalid();
     error ChainIdInvalid();
 
-    constructor(uint256 _protocolFee, address _admin, address _operator, address _router) EIP712(NAME, VERSION) {
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        uint256 _protocolFee,
+        address _admin,
+        address _operator,
+        address _router
+    ) external initializer {
         if (_admin == address(0)) revert AddressIsZero();
         if (_operator == address(0)) revert AddressIsZero();
 
         protocolFee = _protocolFee;
         _setRouter(_router);
 
+        __AccessControl_init();
+        __EIP712_init(NAME, VERSION);
+        __UUPSUpgradeable_init();
+
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(OPERATOR_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, _operator);
     }
 
@@ -222,6 +237,8 @@ contract SingleIdentifierID is AccessControl, EIP712 {
 
         return emitterId;
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(OPERATOR_ROLE) {}
 
     function _generateEmitterId(bytes32 _schemaId, uint256 _registryChainId) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(_schemaId, _registryChainId));

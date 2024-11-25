@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 import "solidity-docgen";
 
@@ -45,6 +46,7 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "types/typechain-types",
   },
+  exclude: ["node_modules/@hyperlane-xyz/core"],
   external: {
     contracts: [
       {

@@ -954,6 +954,11 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.7.3.tgz#f1d606e2827d409053f3e908ba4eb8adb1dd6995"
   integrity sha512-+wuegAMaLcZnLCJIvrVUDzA9z/Wp93f0Dla/4jJvIhijRrPabjQbZe6fWiECLaJyfn5ci9fqf9vTw3xpQOad2A==
 
+"@openzeppelin/contracts-upgradeable@4.9.3":
+  version "4.9.3"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.9.3.tgz#ff17a80fb945f5102571f8efecb5ce5915cc4811"
+  integrity sha512-jjaHAVRMrE4UuZNfDwjlLGDxTHWIOwTJS2ldnc278a0gevfXfPr8hxKEVBGFBE96kl2G3VHDZhUimw/+G3TG2A==
+
 "@openzeppelin/contracts-upgradeable@^v4.9.3":
   version "4.9.6"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.9.6.tgz#38b21708a719da647de4bb0e4802ee235a0d24df"
@@ -979,51 +984,51 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-5.0.2.tgz#b1d03075e49290d06570b2fd42154d76c2a5d210"
   integrity sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA==
 
-"@openzeppelin/defender-sdk-base-client@1.14.3", "@openzeppelin/defender-sdk-base-client@^1.10.0":
-  version "1.14.3"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk-base-client/-/defender-sdk-base-client-1.14.3.tgz#f44d6cdf709c1cfd44f5f5120679eb7c81678e71"
-  integrity sha512-4yG9E8N1c/ZP2jNR+Ah19wi7SBKpauAV/VcYcm7rg1dltDbzbH/oZnnXJlymT7IfjTPXkKHW8TPsaqz3EjS7tA==
+"@openzeppelin/defender-sdk-base-client@^1.14.4", "@openzeppelin/defender-sdk-base-client@^1.15.2":
+  version "1.15.2"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk-base-client/-/defender-sdk-base-client-1.15.2.tgz#aae7ec001365968b81ccce087f39a6eb52fa13f9"
+  integrity sha512-N3ZTeH8TXyklL7yNPMLUv0dxQwT78DTkOEDhzMS2/QE2FxbXrclSseoeeXxl6UYI61RBtZKn+okbSsbwiB5QWQ==
   dependencies:
     amazon-cognito-identity-js "^6.3.6"
     async-retry "^1.3.3"
 
-"@openzeppelin/defender-sdk-deploy-client@^1.10.0":
-  version "1.14.3"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk-deploy-client/-/defender-sdk-deploy-client-1.14.3.tgz#4676f454ba333664174edcf8c419a1fc0d04e780"
-  integrity sha512-51WIZJz251lndK7uQU4gBE0gBX+2ZNTgf+hemtJUEPCpHtkooBRFFMID3EPGMKXVqf872pU8K3Huu9PyYQu6bw==
+"@openzeppelin/defender-sdk-deploy-client@^1.14.4":
+  version "1.15.2"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk-deploy-client/-/defender-sdk-deploy-client-1.15.2.tgz#3b1d953aa66b6cdee13e7e672a488af2e2acf974"
+  integrity sha512-zspzMqh+OC8arXAkgBqTUDVO+NfCkt54UrsmQHbA3UAjr5TiDXKycBKU5ORb01hE+2gAmoPwEpDW9uS2VLg33A==
   dependencies:
-    "@openzeppelin/defender-sdk-base-client" "1.14.3"
+    "@openzeppelin/defender-sdk-base-client" "^1.15.2"
     axios "^1.7.2"
     lodash "^4.17.21"
 
-"@openzeppelin/defender-sdk-network-client@^1.10.0":
-  version "1.14.3"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk-network-client/-/defender-sdk-network-client-1.14.3.tgz#7b8ab18b5f7a62d2fd41d4b9f13581be91861f4d"
-  integrity sha512-qrJLs2ubKSwrhP0x4V2QOPhlc1q8TYnkAcvjvk34VXMS8lhY1cpXSGoxnTw3Mi+eCSE1xOzKWISLi1UAOQOJIw==
+"@openzeppelin/defender-sdk-network-client@^1.14.4":
+  version "1.15.2"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk-network-client/-/defender-sdk-network-client-1.15.2.tgz#7178836d9861272ad509d93dea8739a5c4bf86c1"
+  integrity sha512-9r9pegc1aR7xzP9fmj1zvkk0OXMRJE10JabxxiJzAQQgmNXDeTGI6W5bFgrNJfxzcImNGqddJ3K4weKdLyL21A==
   dependencies:
-    "@openzeppelin/defender-sdk-base-client" "1.14.3"
+    "@openzeppelin/defender-sdk-base-client" "^1.15.2"
     axios "^1.7.2"
     lodash "^4.17.21"
 
-"@openzeppelin/hardhat-upgrades@^3.0.3":
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/hardhat-upgrades/-/hardhat-upgrades-3.2.1.tgz#f531784810050b1b3d7a227d6812a0d31ed0cf65"
-  integrity sha512-Zy5M3QhkzwGdpzQmk+xbWdYOGJWjoTvwbBKYLhctu9B91DoprlhDRaZUwCtunwTdynkTDGdVfGr0kIkvycyKjw==
+"@openzeppelin/hardhat-upgrades@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/hardhat-upgrades/-/hardhat-upgrades-3.5.0.tgz#90ed0508fed8415b7fa9ee1c04ade8ec57091d46"
+  integrity sha512-Ju/JnT7NRiOMi5m5Y0dGiz37d8wnjVBep1v5Vr7+6+MFNuQa1yddUEVWhWhoEw4udI3/mYwyw4Sfz3sq7vhicQ==
   dependencies:
-    "@openzeppelin/defender-sdk-base-client" "^1.10.0"
-    "@openzeppelin/defender-sdk-deploy-client" "^1.10.0"
-    "@openzeppelin/defender-sdk-network-client" "^1.10.0"
-    "@openzeppelin/upgrades-core" "^1.35.0"
+    "@openzeppelin/defender-sdk-base-client" "^1.14.4"
+    "@openzeppelin/defender-sdk-deploy-client" "^1.14.4"
+    "@openzeppelin/defender-sdk-network-client" "^1.14.4"
+    "@openzeppelin/upgrades-core" "^1.40.0"
     chalk "^4.1.0"
     debug "^4.1.1"
     ethereumjs-util "^7.1.5"
     proper-lockfile "^4.1.1"
     undici "^6.11.1"
 
-"@openzeppelin/upgrades-core@^1.35.0":
-  version "1.37.1"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/upgrades-core/-/upgrades-core-1.37.1.tgz#b1879270a83e57639227770b5462b707ad6ab5b0"
-  integrity sha512-dMQPDoMn1OUZXsCHT1thnAmkZ14v0FNlst5Ej8MIfujOv0k74kUok5XeuNF42fYewnNUYMkkz3PhXU1OIwSeyg==
+"@openzeppelin/upgrades-core@^1.40.0":
+  version "1.40.0"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/upgrades-core/-/upgrades-core-1.40.0.tgz#f01647afb99b46356b3e7b98e3b2c7f864d85add"
+  integrity sha512-4bPSXdEqHsNRL5T1ybPLneWGYjzGl6XWGWkv7aUoFFgz8mOdarstRBX1Wi4XJFw6IeHPUI7mMSQr2jdz8Y2ypQ==
   dependencies:
     "@nomicfoundation/slang" "^0.17.0"
     cbor "^9.0.0"

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.24;
 
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {IConnector} from "./interfaces/IConnector.sol";
 import {Destination} from "./types/Structs.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 
-contract SingleRouter is AccessControl {
+contract SingleRouter is AccessControlUpgradeable, UUPSUpgradeable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     address[] public connectorsList;
@@ -46,8 +47,17 @@ contract SingleRouter is AccessControl {
 
     error PeerNotExist(uint256 chainId);
     error PeerInvalid();
+    error AddressIsZero();
 
-    constructor(address _operator) {
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _operator) external initializer {
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+
+        if (_operator == address(0)) revert AddressIsZero();
 
         _grantRole(OPERATOR_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, _operator);
@@ -72,6 +82,8 @@ contract SingleRouter is AccessControl {
             _setConnector(_connectorIds[i], _connectors[i]);
         }
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(OPERATOR_ROLE) {}
 
     function setConnector(uint32 connectorId, address _connector) external onlyRole(OPERATOR_ROLE) {
         _setConnector(connectorId, _connector);
