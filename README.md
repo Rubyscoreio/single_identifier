@@ -1,6 +1,6 @@
-# RubyScore Deposit Contracts
+# RubyScore Single Identifier Contracts
 
-This repo will have a code of RubyScore Deposit Contracts.
+This repo will have a code of RubyScore Identifier Contracts.
 
 ## Setting project
 
