@@ -5,10 +5,12 @@ import {SingleRouter} from "../SingleRouter.sol";
 import {MessageLib} from "../lib/MessageLib.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ISingleIdentifierRegistry} from "../interfaces/ISingleIdentifierRegistry.sol";
+import {SingleIdentifierID} from "../SingleIdentifierID.sol";
 
 abstract contract BaseConnector is AccessControl {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     SingleRouter public router;
+    SingleIdentifierID public singleId;
     ISingleIdentifierRegistry public registry;
     uint32 public connectorId;
 
@@ -17,10 +19,12 @@ abstract contract BaseConnector is AccessControl {
 
     event SetRouter(address indexed router);
     event SetRegistry(address indexed registry);
+    event SetSingleId(address indexed singleId);
     event SetChainIds(uint256 indexed nativeChainId, uint256 indexed customChainId);
     event SetConnectorId(uint32 indexed connectorId);
 
-    error SenderIsNotPeer(uint32 eid);
+    error SenderIsNotPeer(uint32 eid, address sender);
+    error SenderIsNotSingleId(address sender);
     error SenderIsNotRouter(address sender);
     error AddressIsZero();
 
@@ -34,7 +38,6 @@ abstract contract BaseConnector is AccessControl {
 
     function setRegistry(address _registry) external onlyRole(OPERATOR_ROLE) {
         _setRegistry(_registry);
-        emit SetRegistry(_registry);
     }
 
     function setRouter(address _router) external onlyRole(OPERATOR_ROLE) {
@@ -42,6 +45,10 @@ abstract contract BaseConnector is AccessControl {
 
         router = SingleRouter(_router);
         emit SetRouter(_router);
+    }
+
+    function setSingleId(address _singleId) external onlyRole(OPERATOR_ROLE) {
+        _setSingleId(_singleId);
     }
 
     function setChainIds(uint256[] calldata _nativeChainIds, uint256[] calldata _customChainIds) external onlyRole(OPERATOR_ROLE) {
@@ -74,7 +81,20 @@ abstract contract BaseConnector is AccessControl {
         if (_registry == address(0)) revert AddressIsZero();
 
         registry = ISingleIdentifierRegistry(_registry);
+        emit SetRegistry(_registry);
+    }
+
+    function _setSingleId(address _singleId) private {
+        if (_singleId == address(0)) revert AddressIsZero();
+
+        singleId = SingleIdentifierID(_singleId);
+        emit SetSingleId(_singleId);
     }
 
     function supportMethod(bytes4 selector) external pure virtual returns (bool);
+
+    modifier onlySingleId() {
+        if (msg.sender != address(singleId)) revert SenderIsNotSingleId(msg.sender);
+        _;
+    }
 }

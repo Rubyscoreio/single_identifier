@@ -11,6 +11,7 @@ import {ISingleRouter} from "./interfaces/ISingleRouter.sol";
 import {IConnector} from "./interfaces/IConnector.sol";
 import {SingleRouter} from "./SingleRouter.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import "hardhat/console.sol";
 
 contract SingleIdentifierID is AccessControl, EIP712 {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
@@ -92,11 +93,11 @@ contract SingleIdentifierID is AccessControl, EIP712 {
         string calldata _metadata,
         bytes calldata _signature
     ) external payable {
-        bytes32 emitterId = registerEmitter(_schemaId, _registryChainId, _emitterAddress, _expirationDate, _fee, _data, _signature);
+        bytes32 emitterId = registerEmitter(_schemaId, _registryChainId, _emitterAddress, _expirationDate, _fee, _data, _metadata, _signature);
         _sendRegisterSIDMessage(emitterId, _schemaId, _connectorId, _fee, _registryChainId, _expirationDate, _data, _metadata);
     }
 
-    function updateSID(bytes32 _emitterId, uint32 _connectorId, bytes32 _sidId, uint64 _expirationDate, bytes calldata _data, string calldata _metadata, bytes memory _signature) external checkEmitter(_emitterId) {
+    function updateSID(bytes32 _emitterId, uint32 _connectorId, bytes32 _sidId, uint64 _expirationDate, bytes calldata _data, string calldata _metadata, bytes memory _signature) external payable checkEmitter(_emitterId) {
         if (_expirationDate < block.timestamp) revert ExpirationDateInvalid();
         if (_data.length == 0) revert DataIsEmpty();
         if (_signature.length == 0) revert SignatureInvalid();
@@ -156,11 +157,12 @@ contract SingleIdentifierID is AccessControl, EIP712 {
     function withdraw(address payable _receiver) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_receiver == address(0)) revert AddressIsZero();
 
-        (bool sent,) = _receiver.call{value: protocolBalance}("");
+        uint256 amount = protocolBalance;
+        (bool sent,) = _receiver.call{value: amount}("");
         require(sent, "Failed to send Ether");
         protocolBalance = 0;
 
-        emit Withdrawal(_receiver, protocolBalance);
+        emit Withdrawal(_receiver, amount);
     }
 
     function setProtocolFee(uint256 _fee) external onlyRole(OPERATOR_ROLE) {
@@ -179,6 +181,7 @@ contract SingleIdentifierID is AccessControl, EIP712 {
         uint64 _expirationDate,
         uint256 _fee,
         bytes calldata _data,
+        string calldata _metadata,
         bytes calldata _signature
     ) public returns (bytes32) {
         if (_schemaId == bytes32(0)) revert SchemaIdInvalid();
@@ -194,12 +197,13 @@ contract SingleIdentifierID is AccessControl, EIP712 {
         bytes32 registerDigest = _hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
-                    keccak256("SendWithRegistryParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,address user,bytes data)"),
+                    keccak256("SendWithRegistryParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,address user,bytes data,string metadata)"),
                     _schemaId,
                     _emitterAddress,
                     _registryChainId,
                     msg.sender,
-                    keccak256(_data)
+                    keccak256(_data),
+                    keccak256(abi.encodePacked(_metadata))
                 )
             )
         );
@@ -253,6 +257,7 @@ contract SingleIdentifierID is AccessControl, EIP712 {
         bytes memory payload = MessageLib.encodeMessage(MessageLib.SendMessage(_schemaId, msg.sender, _expirationDate, _data, _metadata));
 
         uint256 fee = connector.quote(_registryChainId, payload);
+        console.log("TEST After fee", fee);
         connector.sendMessage{ value: fee }(_registryChainId, payload);
 
         emit SentRegisterSIDMessage(_schemaId, _connectorId, msg.sender, _registryChainId);

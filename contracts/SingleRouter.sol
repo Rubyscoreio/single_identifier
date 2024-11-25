@@ -4,7 +4,6 @@ pragma solidity =0.8.24;
 import {IConnector} from "./interfaces/IConnector.sol";
 import {Destination} from "./types/Structs.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import "hardhat/console.sol";
 
 
 contract SingleRouter is AccessControl {
@@ -38,7 +37,6 @@ contract SingleRouter is AccessControl {
         bytes32 senderInBytes32 = bytes32(uint256(uint160(_sender)));
 
         bytes32 peer = peers[_chainId][_connectorId];
-        console.log("TEST PEER", address(uint160(uint256(peer))), _sender);
         return senderInBytes32 == peer;
     }
 

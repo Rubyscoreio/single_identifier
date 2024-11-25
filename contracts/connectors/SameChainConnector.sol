@@ -10,19 +10,21 @@ contract SameChainConnector is BaseConnector {
 
     event UpdateRegistry(address indexed registry);
 
-    function quote(uint32 /*registryDst*/, bytes memory /*payload*/) public virtual view returns (uint256) {
+    function quote(uint256 /*registryDst*/, bytes memory /*payload*/) public virtual view returns (uint256) {
         return 0;
     }
 
-    function supportMethod(bytes4 selector) external pure override returns (bool) {
-        return selector == this.receiveMessage.selector;
+    function supportMethod(bytes4 /*selector*/) external pure override returns (bool) {
+        return true;
     }
 
     constructor(address _admin, address _operator, address _registry) BaseConnector(_admin, _operator, _registry) {}
 
-    function receiveMessage(bytes memory _payload) external {
-        if (!router.isAvailablePeer(block.chainid, connectorId, msg.sender)) revert SenderIsNotPeer(uint32(block.chainid));
+    function sendMessage(uint256 /*registryDst*/, bytes memory _payload) external payable onlySingleId {
+        _receiveMessage(_payload);
+    }
 
+    function _receiveMessage(bytes memory _payload) internal {
         MessageLib.DecodedMessage memory decodedPayload = MessageLib.decodeMessage(_payload);
 
         if (decodedPayload.messageType == MessageLib.MessageType.TYPE_SEND_REGISTER) {
@@ -30,9 +32,5 @@ contract SameChainConnector is BaseConnector {
         } else if (decodedPayload.messageType == MessageLib.MessageType.TYPE_SEND_UPDATE) {
             registry.updateSID(decodedPayload.renewalMessage);
         }
-    }
-
-    function sendMessage(uint256 /*registryDst*/, bytes memory _payload) external payable {
-        SameChainConnector(address(registry)).receiveMessage(_payload);
     }
 }

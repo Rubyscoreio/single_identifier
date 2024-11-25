@@ -53,7 +53,7 @@ contract HyperlaneConnector is Ownable, BaseConnector {
         }
     }
 
-    function sendMessage(uint256 _registryDst, bytes calldata _payload) external payable {
+    function sendMessage(uint256 _registryDst, bytes calldata _payload) external payable onlySingleId {
         uint32 destination = uint32(customChainIds[_registryDst]);
         bytes32 peer = router.getPeer(connectorId, _registryDst);
 

@@ -10,7 +10,6 @@ import {MessageLib} from "./lib/MessageLib.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {SingleRouter} from "./SingleRouter.sol";
 import {IConnector} from "./interfaces/IConnector.sol";
-import "hardhat/console.sol";
 
 contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessControl {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
@@ -90,10 +89,14 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessCo
     }
 
     function updateSchemaEmitter(bytes32 _schemaId, address _emitter) external onlyRole(OPERATOR_ROLE) {
-        if (schemas[_schemaId].schemaId == bytes32(0)) revert SchemaNotExist();
+        SIDSchema storage schema = schemas[_schemaId];
+        if (schema.schemaId == bytes32(0)) revert SchemaNotExist();
         if (_emitter == address(0)) revert EmitterInvalid();
 
-        schemas[_schemaId].emitter = _emitter;
+        schemaIds[schema.emitter] = bytes32(0);
+        schemaIds[_emitter] = _schemaId;
+        schema.emitter = _emitter;
+
         emit EmitterUpdated(_schemaId, _emitter);
     }
 
@@ -104,15 +107,7 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessCo
         bytes32 sidId = _generateSIDId(_payload.schemaId, _payload.user);
 
         if (singleIdentifierData[sidId].SIDId != bytes32(0)) revert SIDAlreadyExists();
-        console.log("BEFORE REGISTER");
-        console.log("Sid ID: ");
-        console.logBytes32(sidId);
-        console.log("DATA: ");
-        console.logBytes(_payload.data);
-        console.log("SchemaID: ");
-        console.logBytes32(_payload.schemaId);
-        console.log("expirationDate:", _payload.expirationDate);
-        console.log("user:", _payload.user);
+
         singleIdentifierData[sidId] = SID(
             bytes32(sidId),
             bytes32(_payload.schemaId),
@@ -123,8 +118,9 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessCo
             bytes(_payload.data),
             string(_payload.metadata)
         );
-        console.log("REGISTERED");
+
         sidCounter++;
+
         emit SIDRegistered(sidId, _payload.user);
     }
 
@@ -178,8 +174,7 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712, AccessCo
 
     modifier onlyConnector() {
         uint32 connectorId = IConnector(msg.sender).connectorId();
-        //TODO: 2 обязательно надо поменять на block.chainid так как 2 стоит только для теста
-        if (!router.isAvailablePeer(2, connectorId, msg.sender)) revert SenderIsNotPeer(msg.sender);
+        if (!router.isAvailablePeer(block.chainid, connectorId, msg.sender)) revert SenderIsNotPeer(msg.sender);
         _;
     }
 }

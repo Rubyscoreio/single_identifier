@@ -7,7 +7,6 @@ import { MessagingParams, MessagingReceipt } from "@layerzerolabs/lz-evm-protoco
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import {BaseConnector} from "./BaseConnector.sol";
 import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
-import "hardhat/console.sol";
 
 contract LayerZeroConnector is BaseConnector, OApp {
     using OptionsBuilder for bytes;
@@ -42,10 +41,10 @@ contract LayerZeroConnector is BaseConnector, OApp {
         _setGasLimit(_gasLimit);
     }
 
-    function sendMessage(uint256 _registryDst, bytes calldata _payload) external payable {
+    function sendMessage(uint256 _registryDst, bytes calldata _payload) external payable onlySingleId {
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(gasLimit, 0);
         uint32 destination = uint32(customChainIds[_registryDst]);
-        console.log("SEND Chains: ", _registryDst, destination);
+
         _lzSend(
             destination,
             _payload,
@@ -65,9 +64,8 @@ contract LayerZeroConnector is BaseConnector, OApp {
         // Ensures that only the endpoint can attempt to lzReceive() messages to this OApp.
         if (address(endpoint) != msg.sender) revert OnlyEndpoint(msg.sender);
         uint256 srcChainId = nativeChainIds[_origin.srcEid];
-        console.log("Receive Chains: ", srcChainId, uint256(_origin.srcEid));
+
         bytes32 peer = router.getPeer(connectorId, srcChainId);
-        console.log("RECEIVE MESSAGE", address(uint160(uint256(peer))), address(uint160(uint256(_origin.sender))));
         // Ensure that the sender matches the expected peer for the source endpoint.
         if (peer != _origin.sender) revert OnlyPeer(_origin.srcEid, _origin.sender);
 

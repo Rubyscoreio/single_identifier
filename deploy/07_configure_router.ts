@@ -6,6 +6,8 @@ const migrate: DeployFunction = async ({ deployments, getNamedAccounts }) => {
   const signer = await ethers.getSigner(deployer);
 
   //Settings Contract SingleIdentifierRegistry
+  const singleIdDeployment = await deployments.get("SingleIdentifierID");
+
   const registryDeployment = await deployments.get("SingleIdentifierRegistry");
   const registry = await ethers.getContractAt("SingleIdentifierRegistry", registryDeployment.address);
 
@@ -24,6 +26,8 @@ const migrate: DeployFunction = async ({ deployments, getNamedAccounts }) => {
 
   tx = await hyperlaneConnector.connect(signer).setRouter(routerDeployment.address);
   await tx.wait();
+  tx = await hyperlaneConnector.connect(signer).setSingleId(singleIdDeployment.address);
+  await tx.wait();
 
   const layerZeroConnectorDeployment = await deployments.get("LayerZeroConnector");
   const layerZeroConnector = await ethers.getContractAt(
@@ -33,6 +37,8 @@ const migrate: DeployFunction = async ({ deployments, getNamedAccounts }) => {
 
   tx = await layerZeroConnector.connect(signer).setRouter(routerDeployment.address);
   await tx.wait();
+  tx = await layerZeroConnector.connect(signer).setSingleId(singleIdDeployment.address);
+  await tx.wait();
 
   const sameChainConnectorDeployment = await deployments.get("SameChainConnector");
   const sameChainConnector = await ethers.getContractAt(
@@ -41,6 +47,8 @@ const migrate: DeployFunction = async ({ deployments, getNamedAccounts }) => {
   );
 
   tx = await sameChainConnector.connect(signer).setRouter(routerDeployment.address);
+  await tx.wait();
+  tx = await sameChainConnector.connect(signer).setSingleId(singleIdDeployment.address);
   await tx.wait();
 
   const connectorAddresses = [
