@@ -49,10 +49,6 @@ contract SingleRouter is AccessControlUpgradeable, UUPSUpgradeable {
     error PeerInvalid();
     error AddressIsZero();
 
-    constructor() {
-        _disableInitializers();
-    }
-
     function initialize(address _operator) external initializer {
         __AccessControl_init();
         __UUPSUpgradeable_init();

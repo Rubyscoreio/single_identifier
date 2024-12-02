@@ -48,10 +48,6 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712Upgradeabl
     error AddressIsZero();
     error SenderIsNotPeer(address sender);
 
-    constructor() {
-        _disableInitializers();
-    }
-
     function initialize(address _operator) external initializer {
         __EIP712_init(NAME, VERSION);
         __AccessControl_init();

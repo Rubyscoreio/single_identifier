@@ -1,6 +1,5 @@
 import { task } from "hardhat/config";
 import { readdir, readFile } from "fs/promises";
-import { BytesLike } from "ethers/src.ts/utils/data";
 
 task("set-peers", "Prints an account's balance").setAction(
   async ({}, { ethers, deployments, getNamedAccounts }) => {

@@ -50,10 +50,6 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     error ExpirationDateInvalid();
     error ChainIdInvalid();
 
-    constructor() {
-        _disableInitializers();
-    }
-
     function initialize(
         uint256 _protocolFee,
         address _admin,
@@ -74,6 +70,37 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         _grantRole(OPERATOR_ROLE, _operator);
     }
 
+    function registerSIDWithEmitter(
+        bytes32 _schemaId,
+        uint32 _connectorId,
+        uint64 _expirationDate,
+        uint256 _fee,
+        uint256 _registryChainId,
+        address _emitterAddress,
+        bytes calldata _data,
+        string calldata _metadata,
+        bytes calldata _signature,
+        bytes calldata _registerEmitterSignature
+    ) external payable {
+        bytes32 emitterId = registerEmitter(_schemaId, _registryChainId, _emitterAddress, _expirationDate, _fee, _signature);
+
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
+                    _schemaId,
+                    msg.sender,
+                    keccak256(_data),
+                    keccak256(abi.encodePacked(_metadata))
+                )
+            )
+        );
+
+        if (_emitterAddress != ECDSA.recover(digest, _registerEmitterSignature)) revert SignatureInvalid();
+
+        _sendRegisterSIDMessage(emitterId, _schemaId, _connectorId, _fee, _registryChainId, _expirationDate, _data, _metadata);
+    }
+
     function registerSID(bytes32 _emitterId, uint32 _connectorId, bytes calldata _data, bytes calldata _signature, string calldata _metadata) external payable checkEmitter(_emitterId) {
         if (_data.length == 0) revert DataIsEmpty();
         if (_signature.length == 0) revert SignatureInvalid();
@@ -91,24 +118,10 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
                 )
             )
         );
-        _checkRole(OPERATOR_ROLE, ECDSA.recover(digest, _signature));
+
+        if (emitter.owner != ECDSA.recover(digest, _signature)) revert SignatureInvalid();
 
         _sendRegisterSIDMessage(_emitterId, emitter.schemaId, _connectorId, emitter.fee, emitter.registryChainId, emitter.expirationDate, _data, _metadata);
-    }
-
-    function registerSIDWithEmitter(
-        bytes32 _schemaId,
-        uint32 _connectorId,
-        uint64 _expirationDate,
-        uint256 _fee,
-        uint256 _registryChainId,
-        address _emitterAddress,
-        bytes calldata _data,
-        string calldata _metadata,
-        bytes calldata _signature
-    ) external payable {
-        bytes32 emitterId = registerEmitter(_schemaId, _registryChainId, _emitterAddress, _expirationDate, _fee, _data, _metadata, _signature);
-        _sendRegisterSIDMessage(emitterId, _schemaId, _connectorId, _fee, _registryChainId, _expirationDate, _data, _metadata);
     }
 
     function updateSID(bytes32 _emitterId, uint32 _connectorId, bytes32 _sidId, uint64 _expirationDate, bytes calldata _data, string calldata _metadata, bytes memory _signature) external payable checkEmitter(_emitterId) {
@@ -194,15 +207,12 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         address _emitterAddress,
         uint64 _expirationDate,
         uint256 _fee,
-        bytes calldata _data,
-        string calldata _metadata,
         bytes calldata _signature
     ) public returns (bytes32) {
         if (_schemaId == bytes32(0)) revert SchemaIdInvalid();
-        if (_expirationDate < block.timestamp) revert ExpirationDateInvalid();
+        if (_expirationDate <= block.timestamp) revert ExpirationDateInvalid();
         if (_registryChainId == uint256(0)) revert ChainIdInvalid();
         if (_emitterAddress == address(0)) revert AddressIsZero();
-        if (_data.length == 0) revert DataIsEmpty();
         if (_signature.length == 0) revert SignatureInvalid();
 
         bytes32 emitterId = _generateEmitterId(_schemaId, _registryChainId);
@@ -211,13 +221,12 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes32 registerDigest = _hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
-                    keccak256("SendWithRegistryParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,address user,bytes data,string metadata)"),
+                    keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
                     _schemaId,
                     _emitterAddress,
                     _registryChainId,
-                    msg.sender,
-                    keccak256(_data),
-                    keccak256(abi.encodePacked(_metadata))
+                    _fee,
+                    _expirationDate
                 )
             )
         );
@@ -273,7 +282,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes memory payload = MessageLib.encodeMessage(MessageLib.SendMessage(_schemaId, msg.sender, _expirationDate, _data, _metadata));
 
         uint256 fee = connector.quote(_registryChainId, payload);
-        connector.sendMessage{ value: fee }(_registryChainId, payload);
+        connector.sendMessage{value: fee}(_registryChainId, payload);
 
         emit SentRegisterSIDMessage(_schemaId, _connectorId, msg.sender, _registryChainId);
     }
@@ -289,7 +298,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes memory payload = MessageLib.encodeMessage(MessageLib.UpdateMessage(_sidId, _expirationDate, _data, _metadata));
 
         uint256 fee = connector.quote(_registryChainId, payload);
-        connector.sendMessage{ value: fee }(_registryChainId, payload);
+        connector.sendMessage{value: fee}(_registryChainId, payload);
 
         emit SentUpdateSIDMessage(_sidId, _connectorId, msg.sender, _registryChainId);
     }
