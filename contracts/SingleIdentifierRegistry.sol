@@ -177,7 +177,7 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712Upgradeabl
         emit SetRouter(_router);
     }
 
-    /// @dev override for disabling authorised upgrades
+    /// @dev limit upgrade to only operator
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(OPERATOR_ROLE) {}
 
     /// @notice Generate schema id from emitter and schema
