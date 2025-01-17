@@ -55,6 +55,13 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     error ExpirationDateInvalid();
     error ChainIdInvalid();
 
+    /// @notice Checks if the emitter with specified id exists
+    /// @param _emitterId - Id that should be checked
+    modifier checkEmitter(bytes32 _emitterId) {
+        if (emitters[_emitterId].emitterId == bytes32(0)) revert EmitterNotExists();
+        _;
+    }
+
     /// @notice Initializes upgradeable contract
     /// @param _protocolFee - Protocol fee
     /// @param _admin - Admin address, cant be 0x0
@@ -104,7 +111,14 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes calldata _signature,
         bytes calldata _registerEmitterSignature
     ) external payable {
-        bytes32 emitterId = registerEmitter(_schemaId, _registryChainId, _emitterAddress, _expirationDate, _fee, _signature);
+        bytes32 emitterId = registerEmitter(
+            _schemaId,
+            _registryChainId,
+            _emitterAddress,
+            _expirationDate,
+            _fee,
+            _signature
+        );
 
         bytes32 digest = _hashTypedDataV4(
             keccak256(
@@ -120,7 +134,16 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         if (_emitterAddress != ECDSA.recover(digest, _registerEmitterSignature)) revert SignatureInvalid();
 
-        _sendRegisterSIDMessage(emitterId, _schemaId, _connectorId, _fee, _registryChainId, _expirationDate, _data, _metadata);
+        _sendRegisterSIDMessage(
+            emitterId,
+            _schemaId,
+            _connectorId,
+            _fee,
+            _registryChainId,
+            _expirationDate,
+            _data,
+            _metadata
+        );
     }
 
     /// @notice Checks signature and sends SID registering message
@@ -129,7 +152,13 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     /// @param _data - Data that would be sent with registering message
     /// @param _signature - Operators signature with RegisterParams
     /// @param _metadata - Metadata that would be sent with registering message
-    function registerSID(bytes32 _emitterId, uint32 _connectorId, bytes calldata _data, bytes calldata _signature, string calldata _metadata) external payable checkEmitter(_emitterId) {
+    function registerSID(
+        bytes32 _emitterId,
+        uint32 _connectorId,
+        bytes calldata _data,
+        bytes calldata _signature,
+        string calldata _metadata
+    ) external payable checkEmitter(_emitterId) {
         if (_data.length == 0) revert DataIsEmpty();
         if (_signature.length == 0) revert SignatureInvalid();
 
@@ -149,7 +178,16 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         if (emitter.owner != ECDSA.recover(digest, _signature)) revert SignatureInvalid();
 
-        _sendRegisterSIDMessage(_emitterId, emitter.schemaId, _connectorId, emitter.fee, emitter.registryChainId, emitter.expirationDate, _data, _metadata);
+        _sendRegisterSIDMessage(
+            _emitterId,
+            emitter.schemaId,
+            _connectorId,
+            emitter.fee,
+            emitter.registryChainId,
+            emitter.expirationDate,
+            _data,
+            _metadata
+        );
     }
 
     /// @notice Checks signature and sends SID update message
@@ -160,7 +198,15 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     /// @param _data - Data that would be sent with updating message
     /// @param _metadata - Metadata that would be sent with updating message
     /// @param _signature - Operators signature with RegistryEmitterParams
-    function updateSID(bytes32 _emitterId, uint32 _connectorId, bytes32 _sidId, uint64 _expirationDate, bytes calldata _data, string calldata _metadata, bytes memory _signature) external payable checkEmitter(_emitterId) {
+    function updateSID(
+        bytes32 _emitterId,
+        uint32 _connectorId,
+        bytes32 _sidId,
+        uint64 _expirationDate,
+        bytes calldata _data,
+        string calldata _metadata,
+        bytes memory _signature
+    ) external payable checkEmitter(_emitterId) {
         if (_expirationDate < block.timestamp) revert ExpirationDateInvalid();
         if (_data.length == 0) revert DataIsEmpty();
         if (_signature.length == 0) revert SignatureInvalid();
@@ -181,7 +227,16 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         );
         _checkRole(OPERATOR_ROLE, ECDSA.recover(digest, _signature));
 
-        _sendUpdateSIDMessage(emitter.emitterId, _connectorId, emitter.fee, emitter.registryChainId, _sidId, _expirationDate, _data, _metadata);
+        _sendUpdateSIDMessage(
+            emitter.emitterId,
+            _connectorId,
+            emitter.fee,
+            emitter.registryChainId,
+            _sidId,
+            _expirationDate,
+            _data,
+            _metadata
+        );
     }
 
     /// @notice Updates emitter owner address
@@ -216,11 +271,10 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         if (msg.sender != emitter.owner) revert SenderNotEmitter();
 
         uint256 amount = emittersBalances[_emitterId];
+        emittersBalances[_emitterId] = 0;
 
         (bool sent,) = _receiver.call{value: amount}("");
         require(sent, "Failed to send Ether");
-
-        emittersBalances[_emitterId] = 0;
 
         emit Withdrawal(_receiver, amount);
     }
@@ -231,9 +285,10 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         if (_receiver == address(0)) revert AddressIsZero();
 
         uint256 amount = protocolBalance;
+        protocolBalance = 0;
+
         (bool sent,) = _receiver.call{value: amount}("");
         require(sent, "Failed to send Ether");
-        protocolBalance = 0;
 
         emit Withdrawal(_receiver, amount);
     }
@@ -317,6 +372,82 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         return keccak256(abi.encodePacked(_schemaId, _registryChainId));
     }
 
+    /// @notice Sends a register SID message to the registry
+    /// @param _emitterId - Id of emitter that should be used for registering SID
+    /// @param _schemaId - Id of schema that should
+    /// @param _connectorId - Id of connector that should be used for sending registering message
+    /// @param _fee - Fee that would be added to emitter balance
+    /// @param _registryChainId - Id of the chain with registry
+    /// @param _expirationDate - Timestamp when SID expires
+    /// @param _data - Data that would be sent with registering message
+    /// @param _metadata - Metadata that would be sent with registering message
+    function _sendRegisterSIDMessage(
+        bytes32 _emitterId,
+        bytes32 _schemaId,
+        uint32 _connectorId,
+        uint256 _fee,
+        uint256 _registryChainId,
+        uint64 _expirationDate,
+        bytes calldata _data,
+        string calldata _metadata
+    ) internal {
+        uint256 totalAmount = _fee + protocolFee;
+        if (msg.value < totalAmount) revert WrongFeeAmount();
+
+        emittersBalances[_emitterId] += _fee;
+        protocolBalance += protocolFee;
+
+        IConnector connector = router.getRoute(_connectorId, _registryChainId);
+        bytes memory payload = MessageLib.encodeMessage(
+            MessageLib.SendMessage(
+                _schemaId,
+                msg.sender,
+                _expirationDate,
+                _data,
+                _metadata
+            )
+        );
+
+        uint256 fee = connector.quote(_registryChainId, payload);
+        connector.sendMessage{value: fee}(_registryChainId, payload);
+
+        emit SentRegisterSIDMessage(_schemaId, _connectorId, msg.sender, _registryChainId);
+    }
+
+    /// @notice Sends an update SID message to the registry
+    /// @param _emitterId - Id of emitter that should be used for updating SID
+    /// @param _connectorId - Id of connector that should be used for sending updating message
+    /// @param _fee - Fee that would be added to emitter balance
+    /// @param _registryChainId - Id of the chain with registry
+    /// @param _sidId - Id of SID that should be updated
+    /// @param _expirationDate - Timestamp when SID expires
+    /// @param _data - Data that would be sent with updating message
+    /// @param _metadata - Metadata that would be sent with updating message
+    function _sendUpdateSIDMessage(
+        bytes32 _emitterId,
+        uint32 _connectorId,
+        uint256 _fee,
+        uint256 _registryChainId,
+        bytes32 _sidId,
+        uint64 _expirationDate,
+        bytes calldata _data,
+        string calldata _metadata
+    ) internal {
+        uint256 totalAmount = _fee + protocolFee;
+        if (msg.value < totalAmount) revert WrongFeeAmount();
+
+        emittersBalances[_emitterId] += _fee;
+        protocolBalance += protocolFee;
+
+        IConnector connector = router.getRoute(_connectorId, _registryChainId);
+        bytes memory payload = MessageLib.encodeMessage(MessageLib.UpdateMessage(_sidId, _expirationDate, _data, _metadata));
+
+        uint256 fee = connector.quote(_registryChainId, payload);
+        connector.sendMessage{value: fee}(_registryChainId, payload);
+
+        emit SentUpdateSIDMessage(_sidId, _connectorId, msg.sender, _registryChainId);
+    }
+
     /// @notice Sets router address
     /// @param _router - New router address, can't be 0x0
     function _setRouter(address _router) private {
@@ -340,62 +471,5 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         bytes32 domainSeparator = keccak256(abi.encode(TYPE_HASH, hashedName, hashedVersion, uint256(0), address(0)));
         return MessageHashUtils.toTypedDataHash(domainSeparator, structHash);
-    }
-
-    /// @notice Sends a register SID message to the registry
-    /// @param _emitterId - Id of emitter that should be used for registering SID
-    /// @param _schemaId - Id of schema that should
-    /// @param _connectorId - Id of connector that should be used for sending registering message
-    /// @param _fee - Fee that would be added to emitter balance
-    /// @param _registryChainId - Id of the chain with registry
-    /// @param _expirationDate - Timestamp when SID expires
-    /// @param _data - Data that would be sent with registering message
-    /// @param _metadata - Metadata that would be sent with registering message
-    function _sendRegisterSIDMessage(bytes32 _emitterId, bytes32 _schemaId, uint32 _connectorId, uint256 _fee, uint256 _registryChainId, uint64 _expirationDate, bytes calldata _data, string calldata _metadata) internal {
-        uint256 totalAmount = _fee + protocolFee;
-        if (msg.value < totalAmount) revert WrongFeeAmount();
-
-        emittersBalances[_emitterId] = _fee;
-        protocolBalance += protocolFee;
-
-        IConnector connector = router.getRoute(_connectorId, _registryChainId);
-        bytes memory payload = MessageLib.encodeMessage(MessageLib.SendMessage(_schemaId, msg.sender, _expirationDate, _data, _metadata));
-
-        uint256 fee = connector.quote(_registryChainId, payload);
-        connector.sendMessage{value: fee}(_registryChainId, payload);
-
-        emit SentRegisterSIDMessage(_schemaId, _connectorId, msg.sender, _registryChainId);
-    }
-
-    /// @notice Sends an update SID message to the registry
-    /// @param _emitterId - Id of emitter that should be used for updating SID
-    /// @param _connectorId - Id of connector that should be used for sending updating message
-    /// @param _fee - Fee that would be added to emitter balance
-    /// @param _registryChainId - Id of the chain with registry
-    /// @param _sidId - Id of SID that should be updated
-    /// @param _expirationDate - Timestamp when SID expires
-    /// @param _data - Data that would be sent with updating message
-    /// @param _metadata - Metadata that would be sent with updating message
-    function _sendUpdateSIDMessage(bytes32 _emitterId, uint32 _connectorId, uint256 _fee, uint256 _registryChainId, bytes32 _sidId, uint64 _expirationDate, bytes calldata _data, string calldata _metadata) internal {
-        uint256 totalAmount = _fee + protocolFee;
-        if (msg.value < totalAmount) revert WrongFeeAmount();
-
-        emittersBalances[_emitterId] = _fee;
-        protocolBalance += protocolFee;
-
-        IConnector connector = router.getRoute(_connectorId, _registryChainId);
-        bytes memory payload = MessageLib.encodeMessage(MessageLib.UpdateMessage(_sidId, _expirationDate, _data, _metadata));
-
-        uint256 fee = connector.quote(_registryChainId, payload);
-        connector.sendMessage{value: fee}(_registryChainId, payload);
-
-        emit SentUpdateSIDMessage(_sidId, _connectorId, msg.sender, _registryChainId);
-    }
-
-    /// @notice Checks if the emitter with specified id exists
-    /// @param _emitterId - Id that should be checked
-    modifier checkEmitter(bytes32 _emitterId) {
-        if (emitters[_emitterId].emitterId == bytes32(0)) revert EmitterNotExists();
-        _;
     }
 }
