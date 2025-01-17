@@ -8,19 +8,29 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import {BaseConnector} from "./BaseConnector.sol";
 import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 
+/// @title LayerZeroConnector
+/// @notice Connector for LayerZero protocol
 contract LayerZeroConnector is BaseConnector, OApp {
     using OptionsBuilder for bytes;
 
-    uint128 public gasLimit;
+    uint128 public gasLimit;/// @notice Gas limit for sending L0 messages
 
     event SetGasLimit(uint128 gasLimit);
 
     error GasLimitInvalid();
 
+    /// @notice Checks if the method with specified selector is supported by the connector
+    /// @param selector - Selector of the method
+    /// @return Is the method supported
+    /// @dev This method is override for checking if the connector supports the lzReceive method
     function supportMethod(bytes4 selector) external pure override returns (bool) {
         return selector == this.lzReceive.selector;
     }
 
+    /// @notice Quotes the fee for sending message to the specified chain
+    /// @param _registryDst - Id of the chain to which the message should be sent
+    /// @param _payload - Message that should be sent
+    /// @return Fee that should be paid for sending the message in native chain currency
     function quote(uint256 _registryDst, bytes memory _payload) public view returns (uint256) {
         uint32 destination = uint32(customChainIds[_registryDst]);
 
@@ -31,16 +41,28 @@ contract LayerZeroConnector is BaseConnector, OApp {
         return fee.nativeFee;
     }
 
+    /// @param _endpoint - Address of the L0 endpoint contract
+    /// @param _admin - Address of the admin, will be assigned as owner
+    /// @param _operator - Address of the operator
+    /// @param _registry - Address of the registry contract
+    /// @param _gasLimit - Gas limit for sending L0 messages, can't be 0
+    /// @dev _gasLimit 0 check performed in _setGasLimit function
     constructor(address _endpoint, address _admin, address _operator, address _registry, uint128 _gasLimit) OApp(_endpoint, _admin) BaseConnector(_admin, _operator, _registry) Ownable(_admin) {
         require(_endpoint != address(0), "Zero address check");
 
         _setGasLimit(_gasLimit);
     }
 
+    /// @notice Set gas limit for sending messages
+    /// @param _gasLimit - Gas limit for sending messages, can't be 0
+    /// @dev _gasLimit 0 check performed in _setGasLimit function
     function setGasLimit(uint128 _gasLimit) external onlyOwner {
         _setGasLimit(_gasLimit);
     }
 
+    /// @notice External function for sending message through L0 protocol
+    /// @param _registryDst - Native id of the destination chain
+    /// @param _payload - Payload to send
     function sendMessage(uint256 _registryDst, bytes calldata _payload) external payable onlySingleId {
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(gasLimit, 0);
         uint32 destination = uint32(customChainIds[_registryDst]);
@@ -54,6 +76,12 @@ contract LayerZeroConnector is BaseConnector, OApp {
         );
     }
 
+    /// @notice Receives message from L0 protocol
+    /// @param _origin - Origin of the message
+    /// @param _guid - Guid of the message
+    /// @param _message - Message payload
+    /// @param _executor - Executor of the message
+    /// @param _extraData - Extra data of the message
     function lzReceive(
         Origin calldata _origin,
         bytes32 _guid,
@@ -73,6 +101,8 @@ contract LayerZeroConnector is BaseConnector, OApp {
         _lzReceive(_origin, _guid, _message, _executor, _extraData);
     }
 
+    /// @notice Set gas limit for sending messages
+    /// @param _gasLimit - Gas limit for sending messages, can't be 0
     function _setGasLimit(uint128 _gasLimit) private {
         if (_gasLimit == 0) revert GasLimitInvalid();
 
@@ -80,6 +110,12 @@ contract LayerZeroConnector is BaseConnector, OApp {
         emit SetGasLimit(_gasLimit);
     }
 
+    /// @notice Sends message through L0 protocol
+    /// @param _dstEid - Id of the destination chain
+    /// @param _message - Message payload
+    /// @param _options - Options for sending message
+    /// @param _fee - Fees for sending message
+    /// @param _refundAddress - Address to refund excess fees
     function _lzSend(
         uint32 _dstEid,
         bytes memory _message,
@@ -100,12 +136,18 @@ contract LayerZeroConnector is BaseConnector, OApp {
         );
     }
 
+    /// @notice Get peer address for a given emitter id
+    /// @param _eid - Emitter id
+    /// @return peer - Peer address
+    /// @dev Will revert if peer is not found
     function _getPeerOrRevert(uint32 _eid) internal view override returns (bytes32) {
         uint256 srcChainId = nativeChainIds[uint256(_eid)];
         bytes32 peer = router.getPeer(connectorId, srcChainId);
         return peer;
     }
 
+    /// @notice Receives message from L0 protocol
+    /// @param payload - Message payload
     function _lzReceive(
         Origin calldata,
         bytes32,
