@@ -112,7 +112,7 @@ contract SingleRouter is AccessControlUpgradeable, UUPSUpgradeable {
         }
     }
 
-    /// @dev override for disabling authorised upgrades
+    /// @dev limit upgrade to only operator
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(OPERATOR_ROLE) {}
 
     /// @notice Sets connector address for specified connector id
