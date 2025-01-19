@@ -23,7 +23,7 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
-    ) public {
+    ) public payable {
         _sendRegisterSIDMessage(
             _emitterId,
             _schemaId,
@@ -45,7 +45,7 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
-    ) public {
+    ) public payable {
         _sendUpdateSIDMessage(
             _emitterId,
             _connectorId,
