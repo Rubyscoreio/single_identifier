@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+
 import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 import {Emitter} from "contracts/types/Structs.sol";
 
 contract Harness_SingleIdentifierID is SingleIdentifierID {
+    bytes32 public constant TYPE_HASH =
+    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+
     function exposed_authorizeUpgrade(address newImplementation) public {
         _authorizeUpgrade(newImplementation);
-    }
-
-    function exposed_generateEmitterId(bytes32 _schemaId, uint256 _registryChainId) public pure returns (bytes32) {
-        return _generateEmitterId(_schemaId, _registryChainId);
     }
 
     function exposed_sendRegisterSIDMessage(
@@ -61,7 +62,31 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
         emitters[_emitter.emitterId] = _emitter;
     }
 
+    function helper_setEmitterBalance(bytes32 _emitterId, uint256 _balance) public {
+        emittersBalances[_emitterId] = _balance;
+    }
+
+    function helper_setProtocolBalance(uint256 _balance) public {
+        protocolBalance = _balance;
+    }
+
     function helper_grantRole(bytes32 _role, address _address) public {
         _grantRole(_role, _address);
+    }
+
+    function workaround_hashTypedDataV4(bytes32 structHash) public view returns (bytes32) {
+        return _hashTypedDataV4(structHash);
+    }
+
+    function workaround_hashTypedDataV4WithoutDomain(bytes32 structHash) public pure returns (bytes32) {
+        bytes32 hashedName = keccak256(bytes(NAME));
+        bytes32 hashedVersion = keccak256(bytes(VERSION));
+
+        bytes32 domainSeparator = keccak256(abi.encode(TYPE_HASH, hashedName, hashedVersion, uint256(0), address(0)));
+        return MessageHashUtils.toTypedDataHash(domainSeparator, structHash);
+    }
+
+    function workaround_generateEmitterId(bytes32 _schemaId, uint256 _registryChainId) public pure returns (bytes32) {
+        return _generateEmitterId(_schemaId, _registryChainId);
     }
 }

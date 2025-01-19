@@ -3,11 +3,10 @@ pragma solidity ^0.8.24;
 
 import "lib/forge-std/src/Test.sol";
 
+import {IConnector} from "contracts/interfaces/IConnector.sol";
 import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 import {SingleIdentifierRegistry} from "contracts/SingleIdentifierRegistry.sol";
 import {SingleRouter} from "contracts/SingleRouter.sol";
-import {LayerZeroConnector} from "contracts/connectors/LayerZeroConnector.sol";
-import {SameChainConnector} from "contracts/connectors/SameChainConnector.sol";
 
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
@@ -15,9 +14,10 @@ abstract contract Storage_SingleIdentifierID is Test {
     address public constant _defaultAdmin = address(0xA11CE);
     address public constant _defaultOperator = address(0xB0B);
     uint256 public constant _defaultFee = 1e9;
+    uint256 public constant _defaultQuote = 50000e9;
+    string public constant _testMnemonic = "test test test test test test test test test test test junk";
 
-    SameChainConnector public sameChainConnector;
-    LayerZeroConnector public lzConnector;
+    IConnector public connector;
 
     Harness_SingleIdentifierID public singleId;
     SingleIdentifierRegistry public registry;
