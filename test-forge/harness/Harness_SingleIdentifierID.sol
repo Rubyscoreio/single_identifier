@@ -3,8 +3,9 @@ pragma solidity ^0.8.24;
 
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
-import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 import {Emitter} from "contracts/types/Structs.sol";
+import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
+import {SingleRouter} from "contracts/SingleRouter.sol";
 
 contract Harness_SingleIdentifierID is SingleIdentifierID {
     bytes32 public constant TYPE_HASH =
@@ -60,6 +61,10 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
 
     function helper_setEmitter(Emitter memory _emitter) public {
         emitters[_emitter.emitterId] = _emitter;
+    }
+
+    function helper_setRouter(address _router) public {
+        router = SingleRouter(_router);
     }
 
     function helper_setEmitterBalance(bytes32 _emitterId, uint256 _balance) public {

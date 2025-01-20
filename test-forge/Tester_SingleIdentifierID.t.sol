@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Environment_SingleIdentifierID} from "./environment/Environment_SingleIdentifierID.sol";
+import {Environment_SingleIdentifierID_Upgraded} from "./environment/Environment_SingleIdentifierID_Upgraded.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Local} from "./environment/Environment_SingleIdentifierID_SendingMessages_Local.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Optimism_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Optimism_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Optimism_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Optimism_SameChain.sol";
@@ -26,8 +27,18 @@ contract SingleIdentifierIDTest_Administrative is
     Suite_SingleIdentifierID_Administrative
     {}
 
+contract SingleIdentifierIDTest_Administrative_Upgraded is
+    Environment_SingleIdentifierID_Upgraded,
+    Suite_SingleIdentifierID_Administrative
+    {}
+
 contract SingleIdentifierIDTest_ProtocolFlow is
     Environment_SingleIdentifierID,
+    Suite_SingleIdentifierID_ProtocolFlow
+    {}
+
+contract SingleIdentifierIDTest_ProtocolFlow_Upgraded is
+    Environment_SingleIdentifierID_Upgraded,
     Suite_SingleIdentifierID_ProtocolFlow
     {}
 
