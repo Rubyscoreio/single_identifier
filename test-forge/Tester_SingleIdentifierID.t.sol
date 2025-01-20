@@ -19,6 +19,7 @@ import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain} from "./
 import {Suite_SingleIdentifierID_Administrative} from "./suite/Suite_SingleIdentifierID_Administrative.sol";
 import {Suite_SingleIdentifierID_SendingMessages} from "./suite/Suite_SingleIdentifierID_SendingMessages.sol";
 import {Suite_SingleIdentifierID_ProtocolFlow} from "./suite/Suite_SingleIdentifierID_ProtocolFlow.sol";
+import {Suite_SingleIdentifierID_OnchainUpgrade} from "./suite/Suite_SingleIdentifierID_OnchainUpgrade.sol";
 
 contract SingleIdentifierIDTest_Administrative is
     Environment_SingleIdentifierID,
@@ -37,60 +38,72 @@ contract SingleIdentifierIDTest_SendingMessages is
 
 contract SingleIdentifierIDTest_SendingMessages_Optimism_L0 is
     Environment_SingleIdentifierID_SendingMessages_Optimism_L0,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Optimism_Same is
     Environment_SingleIdentifierID_SendingMessages_Optimism_SameChain,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Linea_L0 is
     Environment_SingleIdentifierID_SendingMessages_Linea_L0,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Linea_Same is
     Environment_SingleIdentifierID_SendingMessages_Linea_SameChain,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Arbitrum_L0 is
     Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Arbitrum_Same is
     Environment_SingleIdentifierID_SendingMessages_Arbitrum_SameChain,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Base_L0 is
     Environment_SingleIdentifierID_SendingMessages_Base_L0,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Base_Same is
     Environment_SingleIdentifierID_SendingMessages_Base_SameChain,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Scroll_L0 is
     Environment_SingleIdentifierID_SendingMessages_Scroll_L0,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_Scroll_Same is
     Environment_SingleIdentifierID_SendingMessages_Scroll_SameChain,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
 contract SingleIdentifierIDTest_SendingMessages_ZkEVM_L0 is
     Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0,
-    Suite_SingleIdentifierID_SendingMessages
-    {}
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+{}
 
 contract SingleIdentifierIDTest_SendingMessages_ZkEVM_Same is
     Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain,
-    Suite_SingleIdentifierID_SendingMessages
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
     {}

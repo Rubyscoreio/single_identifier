@@ -12,8 +12,6 @@ import {SingleRouter} from "contracts/SingleRouter.sol";
 import {Storage_SingleIdentifierID_SendingMessages} from "test-forge/storage/Storage_SingleIdentifierID_SendingMessages.sol";
 
 abstract contract Suite_SingleIdentifierID_SendingMessages is Storage_SingleIdentifierID_SendingMessages {
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-
     function test_SendRegisterIDMessage_SendingMessage() public {
         bytes memory data = bytes("Data");
         string memory metadata = "Metadata";

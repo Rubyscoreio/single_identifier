@@ -11,6 +11,9 @@ import {SingleRouter} from "contracts/SingleRouter.sol";
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
 abstract contract Storage_SingleIdentifierID_SendingMessages is Test {
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
     Harness_SingleIdentifierID public singleId;
     SingleIdentifierRegistry public registry;
     SingleRouter public router;
