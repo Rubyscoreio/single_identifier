@@ -41,6 +41,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     event UpdateEmitter(bytes32 indexed emitterId, address indexed newEmitter);
     event SetProtocolFee(uint256 fee);
     event SetRouter(address indexed newRouter);
+    event SetEmitterBalance(bytes32 indexed emitterId, uint256 newBalance);
 
     error EmitterNotExists();
     error EmitterAlreadyExists();
@@ -305,6 +306,14 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     function setRouter(address _router) external onlyRole(OPERATOR_ROLE) {
         _setRouter(_router);
         emit SetRouter(_router);
+    }
+
+    /// @notice Sets router address. It should be used ONLY as a last resort to eliminate the consequences of errors.
+    /// @param _emitterId - Id of the emitter
+    /// @param _balance - New balance
+    function setEmitterBalance(bytes32 _emitterId, uint256 _balance) external onlyRole(DEFAULT_ADMIN_ROLE) checkEmitter(_emitterId) {
+        emittersBalances[_emitterId] = _balance;
+        emit SetEmitterBalance(_emitterId, _balance);
     }
 
     /// @notice Registers new emitter
