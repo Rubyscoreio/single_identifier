@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+
 import {IConnector} from "contracts/interfaces/IConnector.sol";
 import {SingleIdentifierRegistry} from "contracts/SingleIdentifierRegistry.sol";
 import {SingleRouter} from "contracts/SingleRouter.sol";
@@ -8,12 +10,25 @@ import {SingleRouter} from "contracts/SingleRouter.sol";
 import {Storage_SingleIdentifierID} from "test-forge/storage/Storage_SingleIdentifierID.sol";
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
-abstract contract Environment_SingleIdentifierID is Storage_SingleIdentifierID {
+abstract contract Environment_SingleIdentifierID_Upgraded is Storage_SingleIdentifierID {
     function _prepareEnv() internal override {
-        singleId = new Harness_SingleIdentifierID();
+        Harness_SingleIdentifierID singleId1 = new Harness_SingleIdentifierID();
+        Harness_SingleIdentifierID singleId2 = new Harness_SingleIdentifierID();
+
+        ERC1967Proxy proxy = new ERC1967Proxy(address(singleId1), "");
+
+        singleId = Harness_SingleIdentifierID(address(proxy));
         router = new SingleRouter();
 
-        singleId.helper_setRouter(address(router));
+        singleId.initialize(
+            _defaultFee,
+            _defaultAdmin,
+            _defaultOperator,
+            address(router)
+        );
+
+        vm.prank(_defaultOperator);
+        singleId.upgradeTo(address(singleId2));
 
         prepareMocks();
     }

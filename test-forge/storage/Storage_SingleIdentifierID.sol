@@ -11,6 +11,8 @@ import {SingleRouter} from "contracts/SingleRouter.sol";
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
 abstract contract Storage_SingleIdentifierID is Test {
+    bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
     address public constant _defaultAdmin = address(0xA11CE);
     address public constant _defaultOperator = address(0xB0B);
     uint256 public constant _defaultFee = 1e9;
