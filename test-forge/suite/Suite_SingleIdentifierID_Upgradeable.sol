@@ -2,6 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 
@@ -132,6 +134,42 @@ abstract contract Suite_SingleIdentifierID_Upgradeable is Storage_SingleIdentifi
             _fee,
             _admin,
             address(0),
+            address(router)
+        );
+    }
+
+    function test_Updating() public {
+        vm.expectEmit();
+        emit ERC1967Utils.Upgraded(address(singleId));
+        ERC1967Proxy proxy = new ERC1967Proxy(address(singleId), "");
+        SingleIdentifierID proxiedSingleId = SingleIdentifierID(address(proxy));
+
+        proxiedSingleId.initialize(
+            _defaultFee,
+            _defaultAdmin,
+            address(this),
+            address(router)
+        );
+
+        address implementation = address(uint160(uint256(vm.load(address(proxy), _IMPLEMENTATION_SLOT))));
+
+        assertEq(implementation, address(singleId));
+
+        SingleIdentifierID newSingleId = new SingleIdentifierID();
+
+        vm.expectEmit();
+        emit ERC1967Utils.Upgraded(address(newSingleId));
+        proxiedSingleId.upgradeTo(address(newSingleId));
+
+        implementation = address(uint160(uint256(vm.load(address(proxy), _IMPLEMENTATION_SLOT))));
+
+        assertEq(implementation, address(newSingleId));
+
+        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        proxiedSingleId.initialize(
+            _defaultFee,
+            _defaultAdmin,
+            _defaultOperator,
             address(router)
         );
     }
