@@ -18,6 +18,7 @@ import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0} from "./environ
 import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain.sol";
 
 import {Suite_SingleIdentifierID_Administrative} from "./suite/Suite_SingleIdentifierID_Administrative.sol";
+import {Suite_SingleIdentifierID_Upgradeable} from "./suite/Suite_SingleIdentifierID_Upgradeable.sol";
 import {Suite_SingleIdentifierID_SendingMessages} from "./suite/Suite_SingleIdentifierID_SendingMessages.sol";
 import {Suite_SingleIdentifierID_ProtocolFlow} from "./suite/Suite_SingleIdentifierID_ProtocolFlow.sol";
 import {Suite_SingleIdentifierID_OnchainUpgrade} from "./suite/Suite_SingleIdentifierID_OnchainUpgrade.sol";
@@ -40,6 +41,11 @@ contract SingleIdentifierIDTest_ProtocolFlow is
 contract SingleIdentifierIDTest_ProtocolFlow_Upgraded is
     Environment_SingleIdentifierID_Upgraded,
     Suite_SingleIdentifierID_ProtocolFlow
+    {}
+
+contract SingleIdentifierIDTest_Upgradeable is
+    Environment_SingleIdentifierID,
+    Suite_SingleIdentifierID_Upgradeable
     {}
 
 contract SingleIdentifierIDTest_SendingMessages is
