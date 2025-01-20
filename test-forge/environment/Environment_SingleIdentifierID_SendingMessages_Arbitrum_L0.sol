@@ -19,7 +19,10 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0 is 
         registry = SingleIdentifierRegistry(0x4D1E2145082d0AB0fDa4a973dC4887C7295e21aB);
         router = SingleRouter(0x9456E02Ef02C0F5256a559ecf7535356Aeab8647);
 
-        vm.etch(address(singleId), address(singleIdHarness).code);
+        address implementation = address(uint160(uint256(vm.load(address(singleId), _IMPLEMENTATION_SLOT))));
+        vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
+
+        vm.etch(implementation, address(singleIdHarness).code);
 
         singleId.protocolFee();
 

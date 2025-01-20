@@ -21,7 +21,10 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_Linea_SameChain
         registry = SingleIdentifierRegistry(0xDe981aB0cd819bF5D142B89fedA70119D3A958B9);
         router = SingleRouter(0x812DEC92e64Da2FCB773528CBC8B71aaDaA310e8);
 
-        vm.etch(address(singleId), address(singleIdHarness).code);
+        address implementation = address(uint160(uint256(vm.load(address(singleId), _IMPLEMENTATION_SLOT))));
+        vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
+
+        vm.etch(implementation, address(singleIdHarness).code);
 
         singleId.protocolFee();
 

@@ -21,11 +21,10 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_Scroll_SameChai
         registry = SingleIdentifierRegistry(0x4e5bAE495031fECd141c39D0ca231d56e178Fb05);
         router = SingleRouter(0xfa31AB150782F086Ba93b7902E73B05DCBDe716b);
 
-        vm.etch(address(singleId), address(singleIdHarness).code);
+        address implementation = address(uint160(uint256(vm.load(address(singleId), _IMPLEMENTATION_SLOT))));
+        vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
 
-        singleId.protocolFee();
-
-        router.getPeer(connectorId, targetChainId);
+        vm.etch(implementation, address(singleIdHarness).code);
 
         _prepareMocks();// FixMe: Rework env to exclude mocks
     }

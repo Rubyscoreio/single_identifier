@@ -21,11 +21,10 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain
         registry = SingleIdentifierRegistry(0x9456E02Ef02C0F5256a559ecf7535356Aeab8647);
         router = SingleRouter(0x09B18EFC623bf4a6247B23320920C3044a45cC2c);
 
-        vm.etch(address(singleId), address(singleIdHarness).code);
+        address implementation = address(uint160(uint256(vm.load(address(singleId), _IMPLEMENTATION_SLOT))));
+        vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
 
-        singleId.protocolFee();
-
-        router.getPeer(connectorId, targetChainId);
+        vm.etch(implementation, address(singleIdHarness).code);
 
         _prepareMocks();// FixMe: Rework env to exclude mocks
     }
