@@ -19,7 +19,10 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_Base_L0 is Stor
         registry = SingleIdentifierRegistry(0x81f06f4b143a6eAD0e246DA04420F9d6d1fBEF59);
         router = SingleRouter(0xfcB1A34583980bc4565Eb8458B0F715f69e04bA8);
 
-        vm.etch(address(singleId), address(singleIdHarness).code);
+        address implementation = address(uint160(uint256(vm.load(address(singleId), _IMPLEMENTATION_SLOT))));
+        vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
+
+        vm.etch(implementation, address(singleIdHarness).code);
 
         singleId.protocolFee();
 

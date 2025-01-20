@@ -19,6 +19,9 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_Optimism_L0 is 
         registry = SingleIdentifierRegistry(0x4E44211aFe692a4fea11344a2a5827a06aFa573f);
         router = SingleRouter(0x483aC3C8F6C48737a3E524a086A32581Ad433D53);
 
-        vm.etch(address(singleId), address(singleIdHarness).code);
+        address implementation = address(uint160(uint256(vm.load(address(singleId), _IMPLEMENTATION_SLOT))));
+        vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
+
+        vm.etch(implementation, address(singleIdHarness).code);
     }
 }
