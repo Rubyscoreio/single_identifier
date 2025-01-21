@@ -161,7 +161,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         string calldata _metadata
     ) external payable checkEmitter(_emitterId) {
         if (_data.length == 0) revert DataIsEmpty();
-        if (_signature.length == 0) revert SignatureInvalid();
+        if (_signature.length != 65) revert SignatureInvalid();
 
         Emitter storage emitter = emitters[_emitterId];
 
@@ -210,7 +210,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     ) external payable checkEmitter(_emitterId) {
         if (_expirationDate < block.timestamp) revert ExpirationDateInvalid();
         if (_data.length == 0) revert DataIsEmpty();
-        if (_signature.length == 0) revert SignatureInvalid();
+        if (_signature.length != 65) revert SignatureInvalid();
         if (_sidId == bytes32(0)) revert SIDNotValid();
 
         Emitter storage emitter = emitters[_emitterId];
@@ -226,7 +226,8 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
                 )
             )
         );
-        _checkRole(OPERATOR_ROLE, ECDSA.recover(digest, _signature));
+
+        if (emitter.owner != ECDSA.recover(digest, _signature)) revert SignatureInvalid();
 
         _sendUpdateSIDMessage(
             emitter.emitterId,
@@ -400,9 +401,6 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes calldata _data,
         string calldata _metadata
     ) internal {
-        uint256 totalAmount = _fee + protocolFee;
-        if (msg.value < totalAmount) revert WrongFeeAmount();
-
         emittersBalances[_emitterId] += _fee;
         protocolBalance += protocolFee;
 
@@ -417,8 +415,12 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
             )
         );
 
-        uint256 fee = connector.quote(_registryChainId, payload);
-        connector.sendMessage{value: fee}(_registryChainId, payload);
+        uint256 quote = connector.quote(_registryChainId, payload);
+
+        uint256 totalFeeAmount = _fee + protocolFee + quote;
+        if (msg.value < totalFeeAmount) revert WrongFeeAmount();
+
+        connector.sendMessage{value: quote}(_registryChainId, payload);
 
         emit SentRegisterSIDMessage(_schemaId, _connectorId, msg.sender, _registryChainId);
     }
@@ -442,17 +444,25 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes calldata _data,
         string calldata _metadata
     ) internal {
-        uint256 totalAmount = _fee + protocolFee;
-        if (msg.value < totalAmount) revert WrongFeeAmount();
-
         emittersBalances[_emitterId] += _fee;
         protocolBalance += protocolFee;
 
         IConnector connector = router.getRoute(_connectorId, _registryChainId);
-        bytes memory payload = MessageLib.encodeMessage(MessageLib.UpdateMessage(_sidId, _expirationDate, _data, _metadata));
+        bytes memory payload = MessageLib.encodeMessage(
+            MessageLib.UpdateMessage(
+                _sidId,
+                _expirationDate,
+                _data,
+                _metadata
+            )
+        );
 
-        uint256 fee = connector.quote(_registryChainId, payload);
-        connector.sendMessage{value: fee}(_registryChainId, payload);
+        uint256 quote = connector.quote(_registryChainId, payload);
+
+        uint256 totalFeeAmount = _fee + protocolFee + quote;
+        if (msg.value < totalFeeAmount) revert WrongFeeAmount();
+
+        connector.sendMessage{value: quote}(_registryChainId, payload);
 
         emit SentUpdateSIDMessage(_sidId, _connectorId, msg.sender, _registryChainId);
     }
