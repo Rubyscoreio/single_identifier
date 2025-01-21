@@ -678,7 +678,6 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         string calldata _metadata,
         uint32 _emitterPrivateKeyIndex
     ) public {
-        vm.skip(true);
         /// Validating restrictions
         vm.assume(_expirationDate > block.timestamp);
         vm.assume(_data.length != 0);
@@ -696,9 +695,9 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         address emitter = vm.addr(emitterPrivateKey);
 
-        singleId.helper_grantRole(OPERATOR_ROLE, emitter); // TODO: check
-
         vm.label(emitter, "emitter");
+
+        _emitter.owner = emitter;
 
         singleId.helper_setEmitter(_emitter);
 
@@ -891,13 +890,14 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
     /**
         Target: SingleIdentifierID - updateSID
-        Checks: Revert when called with an empty signature
+        Checks: Revert when called with a signature with invalid length
         Restrictions:
             - _emitter.emitterId can't be empty
             - _expirationDate greater than current timestamp
             - _sidId can't be empty
+            - _signature length must not be 65
             - _data can't be empty
-        Flow: updateSID function called with empty signature while other params are correct
+        Flow: updateSID function called with a signature with invalid length while other params are correct
         Expects:
             - execution reverts with the 'SignatureInvalid()' error
     */
@@ -908,11 +908,13 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata,
+        bytes memory _invalidSignature,
         uint32 _emitterPrivateKeyIndex
     ) public {
         /// Validating restrictions
         vm.assume(_expirationDate > block.timestamp);
         vm.assume(_data.length != 0);
+        vm.assume(_invalidSignature.length != 65);
         vm.assume(_emitter.emitterId != bytes32(0));
         vm.assume(_sidId != bytes32(0));
 
@@ -934,7 +936,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             _expirationDate,
             _data,
             _metadata,
-            bytes("")
+            _invalidSignature
         );
     }
 
@@ -1020,9 +1022,8 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata,
-        uint32 _emitterPrivateKeyIndex
+        uint32 _signerPrivateKeyIndex
     ) public {
-        vm.skip(true);
         /// Validating restrictions
         vm.assume(_expirationDate > block.timestamp);
         vm.assume(_data.length != 0);
@@ -1031,11 +1032,11 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
 
         /// Preparing environment
-        uint256 emitterPrivateKey = vm.deriveKey(_testMnemonic, _emitterPrivateKeyIndex);
+        uint256 signerPrivateKey = vm.deriveKey(_testMnemonic, _signerPrivateKeyIndex);
 
-        address emitter = vm.addr(emitterPrivateKey);
+        address signer = vm.addr(signerPrivateKey);
 
-        vm.label(emitter, "emitter");
+        vm.label(signer, "signer");
 
         singleId.helper_setEmitter(_emitter);
 
@@ -1052,17 +1053,11 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             )
         );
 
-        bytes memory invalidSignature = helper_sign(emitterPrivateKey, updateSIDDigest);
+        bytes memory invalidSignature = helper_sign(signerPrivateKey, updateSIDDigest);
 
-        vm.expectRevert(
-            abi.encodePacked(
-                "AccessControl: account ",
-                StringsUpgradeable.toHexString(address(this)),
-                " is missing role ",
-                StringsUpgradeable.toHexString(uint256(OPERATOR_ROLE), 32)
-            )
-        );
+        emit log_address(ECDSA.recover(updateSIDDigest, invalidSignature));
 
+        vm.expectRevert(abi.encodeWithSignature("SignatureInvalid()"));
         // Executing function
         singleId.updateSID(
             _emitter.emitterId,
