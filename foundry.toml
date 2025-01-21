@@ -4,3 +4,36 @@ out = 'out'
 libs = ['node_modules', 'lib']
 test = 'test-forge'
 cache_path  = 'cache_forge'
+
+[rpc_endpoints]
+mainnet = "https://mainnet.infura.io/v3/${INFURA_KEY}"
+polygon = "https://polygon-mainnet.infura.io/v3/${INFURA_KEY}"
+binance = "https://bsc-dataseed.binance.org/"
+zkevm = "https://zkevm-rpc.com"
+base = "https://mainnet.base.org"
+linea = "https://linea-mainnet.infura.io/v3/${INFURA_KEY}"
+zora = "https://zora.drpc.org"
+optimism = "https://mainnet.optimism.io"
+scroll = "https://rpc.scroll.io/"
+manta = "https://pacific-rpc.manta.network/http"
+mantle = "https://rpc.mantle.xyz"
+taiko = "https://rpc.mainnet.taiko.xyz"
+arbitrum = "https://arb1.arbitrum.io/rpc"
+devnet = "${TENDERLY_DEVNET_RPC}"
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}", chain = 1, url="https://api.etherscan.io/api" }
+polygon = { key = "${POLYGONSCAN_API_KEY}", chain = 137, url="https://api.etherscan.io/api" }
+binance = { key = "${BSCSCAN_API_KEY}", chain = 56, url="https://api.etherscan.io/api" }
+zkevm = { key = "${POLYGONZKSCAN_API_KEY}", chain = 1101, url = "https://api-zkevm.polygonscan.com/api" }
+base = { key = "${BASESCAN_API_KEY}", chain = 8453, url="https://api.basescan.org/api" }
+linea = { key = "${LINEASCAN_API_KEY}", chain = 59144, url="https://api.lineascan.build/api" }
+zora = { key = "${ZORASCAN_API_KEY}", chain = 7777777, url="https://explorer.zora.energy/api" }
+optimism = { key = "${OPTIMIZM_API_KEY}", chain = 10, url="https://api-optimistic.etherscan.io/api" }
+scroll = { key = "${SCROLLSCAN_API_KEY}", chain = 534352, url="https://api.scrollscan.com/api" }
+manta = { key = "${MANTASCAN_API_KEY}", chain = 3441005, url="https://pacific-explorer.manta.network/api" }
+#mantle = { key = "${MANTLESCAN_API_KEY}", chain = 5000, url="https://api.etherscan.io/api" }
+taiko = { key = "${TAIKOSCAN_API_KEY}", chain = 167000, url="https://api.taikoscan.io/api" }
+#berachain = { key = "${BERACHAINSCAN_API_KEY}", chain = 0, url="https://api.etherscan.io/api" }
+arbitrum = { key = "${ARBITRUM_API_KEY}", chain = 42161, url="https://api.arbiscan.io/api" }
+devnet = { key = "${TENDERLY_API_KEY}", url = "${TENDERLY_DEVNET_RPC}/verify/etherscan" }
