@@ -2,44 +2,67 @@
 pragma solidity =0.8.24;
 
     /// @notice SID data in registry
+    /// @param SIDId - Id of that SID
+    /// @param schemaId - Id of schema used in this SID
+    /// @param expirationDate - Timestamp when SID expires
+    /// @param revocationDate - Timestamp when SID was revoked, 0 if not revoked
+    /// @param revoked - Indicates is this SID revoked
+    /// @param user - Address to which this SID is assigned
+    /// @param data - SIDs data
+    /// @param metadata - SIDs metadata
     struct SID {
-        bytes32 SIDId;          /// @notice Id of that SID
-        bytes32 schemaId;       /// @notice Id of schema used in this SID
-        uint64 expirationDate;  /// @notice Timestamp when SID expires
-        uint64 revocationDate;  /// @notice Timestamp when SID was revoked, 0 if not revoked
-        bool revoked;           /// @notice Indicates is this SID revoked
-        address user;           /// @notice Address to which this SID is assigned
-        bytes data;             /// @notice SIDs data
-        string metadata;        /// @notice SIDs metadata
+        bytes32 SIDId;
+        bytes32 schemaId;
+        uint64 expirationDate;
+        uint64 revocationDate;
+        bool revoked;
+        address user;
+        bytes data;
+        string metadata;
     }
 
     /// @notice Schema in storage
     /// @dev Used for storing schemas
+    /// @param schemaId - Id of schema
+    /// @param name - Schema name
+    /// @param description - Schema description
+    /// @param schema - Schema data
+    /// @param emitter - Address of the owner of the emitter that registered this schema
     struct SIDSchema {
         bytes32 schemaId;
-        string name;        /// @notice Schema name
-        string description; /// @notice Schema description
-        string schema;      /// @notice Schema data
-        address emitter;    /// @notice Address of the owner of the emitter that registered this schema
+        string name;
+        string description;
+        string schema;
+        address emitter;
     }
 
     /// @notice Schema params
     /// @dev Used for registering new schema
+    /// @param name - Schema name
+    /// @param description - Schema description
+    /// @param schema - Schema data
+    /// @param emitter - Address of the owner of the emitter that registered this schema
     struct SIDSchemaParams {
-        string name;        /// @notice Schema name
-        string description; /// @notice Schema description
-        string schema;      /// @notice Schema data
-        address emitter;    /// @notice Address of the owner of the emitter that registered this schema
+        string name;
+        string description;
+        string schema;
+        address emitter;
     }
 
     /// @notice Emitter data in registry
+    /// @param emitterId - Id of that emitter
+    /// @param schemaId - Id of schema used by that emitter
+    /// @param expirationDate - Timestamp when emitter becomes invalid
+    /// @param fee - Fees for creating and updating SIDs
+    /// @param registryChainId - Id of the chain where the registry is deployed
+    /// @param owner - Address that can act as that emitter
     struct Emitter {
-        bytes32 emitterId;      /// @notice Emitter id
-        bytes32 schemaId;       /// @notice Id of the schema used by that emitter
-        uint64 expirationDate;  /// @notice Timestamp when emitter becomes invalid
-        uint256 fee;            /// @notice Fees for creating and updating SIDs
-        uint256 registryChainId;/// @notice Id of the chain where the registry is deployed
-        address owner;          /// @notice Address that can act as that emitter
+        bytes32 emitterId;
+        bytes32 schemaId;
+        uint64 expirationDate;
+        uint256 fee;
+        uint256 registryChainId;
+        address owner;
     }
 
     /// @dev deprecated

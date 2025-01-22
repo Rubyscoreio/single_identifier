@@ -21,14 +21,20 @@ contract SingleIdentifierRegistry is ISingleIdentifierRegistry, EIP712Upgradeabl
 
     // Upgradeable storage
     // v0.0.1
-    SingleRouter public router;/// @notice Address of actual router contract
+    /// @notice Address of actual router contract
+    SingleRouter public router;
 
-    mapping(bytes32 schemaId => SIDSchema schema) public schemas;   /// @notice Schemas data
-    mapping(address emitter => bytes32 schemaId) public schemaIds;  /// @notice Schemas assigned to emitters
-    mapping(bytes32 id => SID sid) public singleIdentifierData;     /// @notice SIDs data
+    /// @notice Schemas data
+    mapping(bytes32 schemaId => SIDSchema schema) public schemas;
+    /// @notice Schemas assigned to emitters
+    mapping(address emitter => bytes32 schemaId) public schemaIds;
+    /// @notice SIDs data
+    mapping(bytes32 id => SID sid) public singleIdentifierData;
 
-    uint256 public sidCounter;      /// @notice SID counter
-    uint256 public emitterCounter;  /// @notice Emitter counter
+    /// @notice SID counter
+    uint256 public sidCounter;
+    /// @notice Emitter counter
+    uint256 public emitterCounter;
     // Upgradeable storage end
 
     event SchemaRegistered(bytes32 indexed schemaId, address indexed emitter);
