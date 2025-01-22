@@ -13,10 +13,13 @@ contract SingleRouter is AccessControlUpgradeable, UUPSUpgradeable {
 
     // Upgradeable storage
     // v0.0.1
-    address[] public connectorsList; /// @dev deprecated
+    /// @dev deprecated
+    address[] public connectorsList;
 
-    mapping(uint32 connectorId => IConnector connector) public connectors;/// @notice Connectors addresses
-    mapping(uint256 chainId => mapping(uint32 connectorId => bytes32 peer)) public peers; /// @notice Addresses of peers for connectors on chains in bytes32 format
+    /// @notice Connectors addresses
+    mapping(uint32 connectorId => IConnector connector) public connectors;
+    /// @notice Addresses of peers for connectors on chains in bytes32 format
+    mapping(uint256 chainId => mapping(uint32 connectorId => bytes32 peer)) public peers;
     // Upgradeable storage end
 
     /// @notice Returns connector address for specified chain and connector id

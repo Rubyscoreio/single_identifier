@@ -6,30 +6,42 @@ pragma solidity =0.8.24;
 library MessageLib {
 
     /// @notice Single message for sending
+    /// @param schemaId - Id of schema that was used for encoding message
+    /// @param user - Address that sent the message
+    /// @param expirationDate - Timestamp when message expires
+    /// @param data - Message data
+    /// @param metadata - Message metadata
     struct SendMessage {
-        bytes32 schemaId;       /// @notice Id of schema that was used for encoding message
-        address user;           /// @notice Address that sent the message
-        uint64 expirationDate;  /// @notice Timestamp when message expires
-        bytes data;             /// @notice Message data
-        string metadata;        /// @notice Message metadata
+        bytes32 schemaId;
+        address user;
+        uint64 expirationDate;
+        bytes data;
+        string metadata;
     }
 
     /// @notice Message for updating already sent message
+    /// @param id - Id of message that should be updated
+    /// @param expirationDate - Timestamp when message expires
+    /// @param data - Message data
+    /// @param metadata - Message metadata
     struct UpdateMessage {
-        bytes32 id;             /// @notice Id of message that should be updated
-        uint64 expirationDate;  /// @notice Updated timestamp when message expires
-        bytes data;             /// @notice Updated message data
-        string metadata;        /// @notice Updated message metadata
+        bytes32 id;
+        uint64 expirationDate;
+        bytes data;
+        string metadata;
     }
 
     /// @notice Message types
     enum MessageType {TYPE_SEND_REGISTER, TYPE_SEND_UPDATE}
 
     /// @notice Decoded message
+    /// @param messageType - Type of message
+    /// @param sendMessage - Message data if messageType is TYPE_SEND_REGISTER, otherwise 0
+    /// @param renewalMessage - Renewal message data if messageType is TYPE_SEND_UPDATE, otherwise 0
     struct DecodedMessage {
-        MessageType messageType;        /// @notice Type of message
-        SendMessage sendMessage;        /// @notice Message data if messageType is TYPE_SEND_REGISTER, otherwise 0
-        UpdateMessage renewalMessage;   /// @notice Renewal message data if messageType is TYPE_SEND_UPDATE, otherwise 0
+        MessageType messageType;
+        SendMessage sendMessage;
+        UpdateMessage renewalMessage;
     }
 
     uint8 public constant TYPE_SEND_REGISTER = 1;/// @notice Constant for register message type

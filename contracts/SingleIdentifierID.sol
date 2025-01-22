@@ -26,12 +26,17 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
     // Upgradeable storage
     // v0.0.1
-    uint256 public protocolFee;     /// @notice Fee that charged by protocol for creating and updating SIDs
-    uint256 public protocolBalance; /// @notice Sum of all charged fees in contract balance
-    SingleRouter public router;     /// @notice Address of actual router contract
+    /// @notice Fee that charged by protocol for creating and updating SIDs
+    uint256 public protocolFee;
+    /// @notice Sum of all charged fees in contract balance
+    uint256 public protocolBalance;
+    /// @notice Address of actual router contract
+    SingleRouter public router;
 
-    mapping(bytes32 emitterId => Emitter emitter) public emitters;          /// @notice Emitters data
-    mapping(bytes32 emitterId => uint256 balance) public emittersBalances;  /// @notice Sum of all fees charged by emitter in contract balance
+    /// @notice Emitters data
+    mapping(bytes32 emitterId => Emitter emitter) public emitters;
+    /// @notice Sum of all fees charged by emitter in contract balance
+    mapping(bytes32 emitterId => uint256 balance) public emittersBalances;
     // Upgradeable storage end
 
     event EmitterRegistered(bytes32 indexed emitterId, address indexed emitterAddress, uint256 registryChainId);
