@@ -16,6 +16,8 @@ import {Environment_SingleIdentifierID_SendingMessages_Scroll_L0} from "./enviro
 import {Environment_SingleIdentifierID_SendingMessages_Scroll_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Scroll_SameChain.sol";
 import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Taiko_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Taiko_L0.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Taiko_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Taiko_SameChain.sol";
 
 import {Suite_SingleIdentifierID_Administrative} from "./suite/Suite_SingleIdentifierID_Administrative.sol";
 import {Suite_SingleIdentifierID_Upgradeable} from "./suite/Suite_SingleIdentifierID_Upgradeable.sol";
@@ -123,4 +125,16 @@ contract SingleIdentifierIDTest_SendingMessages_ZkEVM_Same is
     Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain,
     Suite_SingleIdentifierID_SendingMessages,
     Suite_SingleIdentifierID_OnchainUpgrade
-    {}
+{}
+
+contract SingleIdentifierIDTest_SendingMessages_Taiko_L0 is
+    Environment_SingleIdentifierID_SendingMessages_Taiko_L0,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+{}
+
+contract SingleIdentifierIDTest_SendingMessages_Taiko_Same is
+    Environment_SingleIdentifierID_SendingMessages_Taiko_SameChain,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+{}
