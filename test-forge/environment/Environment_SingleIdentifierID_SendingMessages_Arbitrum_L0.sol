@@ -6,12 +6,12 @@ import {IConnector} from "contracts/interfaces/IConnector.sol";
 import {SingleIdentifierRegistry} from "contracts/SingleIdentifierRegistry.sol";
 import {SingleRouter} from "contracts/SingleRouter.sol";
 
-import {Storage_SingleIdentifierID_SendingMessages} from "test-forge/storage/Storage_SingleIdentifierID_SendingMessages.sol";
+import {Environment_Base_L0} from "test-forge/environment/Environment_Base_L0.sol";
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
-abstract contract Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0 is Storage_SingleIdentifierID_SendingMessages {
+abstract contract Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0 is Environment_Base_L0 {
     function _prepareEnv() internal override {
-        vm.createSelectFork("https://1rpc.io/arb");
+        vm.createSelectFork("arbitrum");
 
         Harness_SingleIdentifierID singleIdHarness = new Harness_SingleIdentifierID();
 
@@ -24,7 +24,7 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0 is 
 
         vm.etch(implementation, address(singleIdHarness).code);
 
-        singleId.protocolFee();
+        reconfigureConnector(0x2f55C492897526677C5B68fb199ea31E2c126416);
 
         router.getPeer(connectorId, targetChainId);
     }

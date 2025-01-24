@@ -6,12 +6,12 @@ import {IConnector} from "contracts/interfaces/IConnector.sol";
 import {SingleIdentifierRegistry} from "contracts/SingleIdentifierRegistry.sol";
 import {SingleRouter} from "contracts/SingleRouter.sol";
 
-import {Storage_SingleIdentifierID_SendingMessages} from "test-forge/storage/Storage_SingleIdentifierID_SendingMessages.sol";
+import {Environment_Base_L0} from "test-forge/environment/Environment_Base_L0.sol";
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
-abstract contract Environment_SingleIdentifierID_SendingMessages_Optimism_L0 is Storage_SingleIdentifierID_SendingMessages {
+abstract contract Environment_SingleIdentifierID_SendingMessages_Optimism_L0 is Environment_Base_L0 {
     function _prepareEnv() internal override {
-        vm.createSelectFork("https://1rpc.io/op");
+        vm.createSelectFork("optimism");
 
         Harness_SingleIdentifierID singleIdHarness = new Harness_SingleIdentifierID();
 
@@ -21,6 +21,8 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_Optimism_L0 is 
 
         address implementation = address(uint160(uint256(vm.load(address(singleId), _IMPLEMENTATION_SLOT))));
         vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
+
+        reconfigureConnector(0x6A02D83e8d433304bba74EF1c427913958187142);
 
         vm.etch(implementation, address(singleIdHarness).code);
     }

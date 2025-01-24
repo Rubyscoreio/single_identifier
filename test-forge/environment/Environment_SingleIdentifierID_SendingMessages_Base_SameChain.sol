@@ -11,7 +11,7 @@ import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdent
 
 abstract contract Environment_SingleIdentifierID_SendingMessages_Base_SameChain is Storage_SingleIdentifierID_SendingMessages {
     function _prepareEnv() internal override {
-        vm.createSelectFork("https://1rpc.io/base");
+        vm.createSelectFork("base");
 
         connectorId = 0;
 

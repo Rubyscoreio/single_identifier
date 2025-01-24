@@ -1,17 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import {ILayerZeroEndpointV2} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessageLibManager.sol";
+import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
+
 import {Emitter} from "contracts/types/Structs.sol";
 import {IConnector} from "contracts/interfaces/IConnector.sol";
+import {LayerZeroConnector} from "contracts/connectors/LayerZeroConnector.sol";
 import {SingleIdentifierRegistry} from "contracts/SingleIdentifierRegistry.sol";
 import {SingleRouter} from "contracts/SingleRouter.sol";
 
-import {Storage_SingleIdentifierID_SendingMessages} from "test-forge/storage/Storage_SingleIdentifierID_SendingMessages.sol";
+import {Environment_Base_L0} from "test-forge/environment/Environment_Base_L0.sol";
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
-abstract contract Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0 is Storage_SingleIdentifierID_SendingMessages {
+abstract contract Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0 is Environment_Base_L0 {
     function _prepareEnv() internal override {
-        vm.createSelectFork("https://1rpc.io/polygon/zkevm");
+        vm.createSelectFork("zkevm");
 
         Harness_SingleIdentifierID singleIdHarness = new Harness_SingleIdentifierID();
 
@@ -23,6 +28,8 @@ abstract contract Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0 is Sto
         vm.store(address(singleId), _IMPLEMENTATION_SLOT, bytes32(uint256(uint160(address(singleIdHarness)))));
 
         vm.etch(implementation, address(singleIdHarness).code);
+
+        reconfigureConnector(0x488863D609F3A673875a914fBeE7508a1DE45eC6);
 
         router.getPeer(connectorId, targetChainId);
     }
