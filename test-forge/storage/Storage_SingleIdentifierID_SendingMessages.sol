@@ -19,7 +19,7 @@ abstract contract Storage_SingleIdentifierID_SendingMessages is Test {
     SingleRouter public router;
 
     address public admin = 0x0d0D5Ff3cFeF8B7B2b1cAC6B6C27Fd0846c09361;
-    address public operator;
+    address public operator = 0x381c031bAA5995D0Cc52386508050Ac947780815;
     uint256 public targetChainId = 8453;
     Emitter public emitter;
     uint32 public connectorId = 2;
