@@ -13,7 +13,6 @@ simulateDeploySingleId:
 	--sig "run(string)" \
 	--via-ir \
 	-vvvv \
-	--private-key ${DEPLOYER_KEY}
 
 simulateDeploySingleIdMultichain:
 	@echo "Simulating deployment to $(chains)"
@@ -22,7 +21,6 @@ simulateDeploySingleIdMultichain:
 	--sig "runMultichain(string[])" \
 	--via-ir \
 	-vvvv \
-	--private-key ${DEPLOYER_KEY}
 
 deploySingleId:
 	@echo "Deploying to $(chain)"
@@ -32,7 +30,14 @@ deploySingleId:
 	--sig "run(string)" \
 	--via-ir \
 	-vvvv \
-	--private-key ${DEPLOYER_KEY} \
 	--etherscan-api-key ${ETHERSCAN_API_KEY} \
 #	--broadcast \
 #	--verify \
+
+configureL0Connectors:
+	forge script scripts/ConfigureL0Connectors.s.sol:ConfigureL0ConnectorsScript \
+	$(chains) \
+	--sig "runMultichain(string[])" \
+	--via-ir \
+	-vvvv \
+	--broadcast \

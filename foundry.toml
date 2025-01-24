@@ -21,6 +21,9 @@ taiko = "https://rpc.mainnet.taiko.xyz"
 arbitrum = "https://arb1.arbitrum.io/rpc"
 devnet = "${TENDERLY_DEVNET_RPC}"
 
+optimismSepolia = "https://sepolia.optimism.io"
+baseSepolia = "https://sepolia.base.org"
+
 [etherscan]
 mainnet = { key = "${ETHERSCAN_API_KEY}", chain = 1, url="https://api.etherscan.io/api" }
 polygon = { key = "${POLYGONSCAN_API_KEY}", chain = 137, url="https://api.etherscan.io/api" }
@@ -36,4 +39,7 @@ manta = { key = "${MANTASCAN_API_KEY}", chain = 3441005, url="https://pacific-ex
 taiko = { key = "${TAIKOSCAN_API_KEY}", chain = 167000, url="https://api.taikoscan.io/api" }
 #berachain = { key = "${BERACHAINSCAN_API_KEY}", chain = 0, url="https://api.etherscan.io/api" }
 arbitrum = { key = "${ARBITRUM_API_KEY}", chain = 42161, url="https://api.arbiscan.io/api" }
+
+optimismSepolia = { key = "${OPTIMISM_API_KEY}", chain = 11155420, url="https://api-sepolia-optimistic.etherscan.io/api" }
+baseSepolia = { key = "${BASE_API_KEY}", chain = 84532, url="https://api-sepolia.basescan.org/api" }
 devnet = { key = "${TENDERLY_API_KEY}", url = "${TENDERLY_DEVNET_RPC}/verify/etherscan" }
