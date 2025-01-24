@@ -40,4 +40,4 @@ configureL0Connectors:
 	--sig "runMultichain(string[])" \
 	--via-ir \
 	-vvvv \
-	--broadcast \
+#	--broadcast \
