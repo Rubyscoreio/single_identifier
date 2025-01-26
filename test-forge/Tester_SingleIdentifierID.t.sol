@@ -4,18 +4,25 @@ pragma solidity ^0.8.24;
 import {Environment_SingleIdentifierID} from "./environment/Environment_SingleIdentifierID.sol";
 import {Environment_SingleIdentifierID_Upgraded} from "./environment/Environment_SingleIdentifierID_Upgraded.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Local} from "./environment/Environment_SingleIdentifierID_SendingMessages_Local.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Optimism_Hyperlane} from "./environment/Environment_SingleIdentifierID_SendingMessages_Optimism_Hyperlane.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Optimism_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Optimism_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Optimism_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Optimism_SameChain.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Linea_Hyperlane} from "./environment/Environment_SingleIdentifierID_SendingMessages_Linea_Hyperlane.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Linea_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Linea_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Linea_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Linea_SameChain.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Arbitrum_Hyperlane} from "./environment/Environment_SingleIdentifierID_SendingMessages_Arbitrum_Hyperlane.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Arbitrum_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Arbitrum_SameChain.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Base_Hyperlane} from "./environment/Environment_SingleIdentifierID_SendingMessages_Base_Hyperlane.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Base_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Base_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Base_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Base_SameChain.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Scroll_Hyperlane} from "./environment/Environment_SingleIdentifierID_SendingMessages_Scroll_Hyperlane.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Scroll_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Scroll_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Scroll_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Scroll_SameChain.sol";
+import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_Hyperlane} from "./environment/Environment_SingleIdentifierID_SendingMessages_ZkEVM_Hyperlane.sol";
 import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain.sol";
+import {Environment_SingleIdentifierID_SendingMessages_Taiko_Hyperlane} from "./environment/Environment_SingleIdentifierID_SendingMessages_Taiko_Hyperlane.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Taiko_L0} from "./environment/Environment_SingleIdentifierID_SendingMessages_Taiko_L0.sol";
 import {Environment_SingleIdentifierID_SendingMessages_Taiko_SameChain} from "./environment/Environment_SingleIdentifierID_SendingMessages_Taiko_SameChain.sol";
 
@@ -55,6 +62,12 @@ contract SingleIdentifierIDTest_SendingMessages is
     Suite_SingleIdentifierID_SendingMessages
     {}
 
+contract SingleIdentifierIDTest_SendingMessages_Optimism_Hyperlane is
+    Environment_SingleIdentifierID_SendingMessages_Optimism_Hyperlane,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+    {}
+
 contract SingleIdentifierIDTest_SendingMessages_Optimism_L0 is
     Environment_SingleIdentifierID_SendingMessages_Optimism_L0,
     Suite_SingleIdentifierID_SendingMessages,
@@ -63,6 +76,12 @@ contract SingleIdentifierIDTest_SendingMessages_Optimism_L0 is
 
 contract SingleIdentifierIDTest_SendingMessages_Optimism_Same is
     Environment_SingleIdentifierID_SendingMessages_Optimism_SameChain,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+    {}
+
+contract SingleIdentifierIDTest_SendingMessages_Linea_Hyperlane is
+    Environment_SingleIdentifierID_SendingMessages_Linea_Hyperlane,
     Suite_SingleIdentifierID_SendingMessages,
     Suite_SingleIdentifierID_OnchainUpgrade
     {}
@@ -79,6 +98,12 @@ contract SingleIdentifierIDTest_SendingMessages_Linea_Same is
     Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
+contract SingleIdentifierIDTest_SendingMessages_Arbitrum_Hyperlane is
+    Environment_SingleIdentifierID_SendingMessages_Arbitrum_Hyperlane,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+    {}
+
 contract SingleIdentifierIDTest_SendingMessages_Arbitrum_L0 is
     Environment_SingleIdentifierID_SendingMessages_Arbitrum_L0,
     Suite_SingleIdentifierID_SendingMessages,
@@ -87,6 +112,12 @@ contract SingleIdentifierIDTest_SendingMessages_Arbitrum_L0 is
 
 contract SingleIdentifierIDTest_SendingMessages_Arbitrum_Same is
     Environment_SingleIdentifierID_SendingMessages_Arbitrum_SameChain,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+    {}
+
+contract SingleIdentifierIDTest_SendingMessages_Base_Hyperlane is
+    Environment_SingleIdentifierID_SendingMessages_Base_Hyperlane,
     Suite_SingleIdentifierID_SendingMessages,
     Suite_SingleIdentifierID_OnchainUpgrade
     {}
@@ -103,6 +134,12 @@ contract SingleIdentifierIDTest_SendingMessages_Base_Same is
     Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
+contract SingleIdentifierIDTest_SendingMessages_Scroll_Hyperlane is
+    Environment_SingleIdentifierID_SendingMessages_Scroll_Hyperlane,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+    {}
+
 contract SingleIdentifierIDTest_SendingMessages_Scroll_L0 is
     Environment_SingleIdentifierID_SendingMessages_Scroll_L0,
     Suite_SingleIdentifierID_SendingMessages,
@@ -115,6 +152,12 @@ contract SingleIdentifierIDTest_SendingMessages_Scroll_Same is
     Suite_SingleIdentifierID_OnchainUpgrade
     {}
 
+contract SingleIdentifierIDTest_SendingMessages_ZkEVM_Hyperlane is
+    Environment_SingleIdentifierID_SendingMessages_ZkEVM_Hyperlane,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+{}
+
 contract SingleIdentifierIDTest_SendingMessages_ZkEVM_L0 is
     Environment_SingleIdentifierID_SendingMessages_ZkEVM_L0,
     Suite_SingleIdentifierID_SendingMessages,
@@ -123,6 +166,12 @@ contract SingleIdentifierIDTest_SendingMessages_ZkEVM_L0 is
 
 contract SingleIdentifierIDTest_SendingMessages_ZkEVM_Same is
     Environment_SingleIdentifierID_SendingMessages_ZkEVM_SameChain,
+    Suite_SingleIdentifierID_SendingMessages,
+    Suite_SingleIdentifierID_OnchainUpgrade
+{}
+
+contract SingleIdentifierIDTest_SendingMessages_Taiko_Hyperlane is
+    Environment_SingleIdentifierID_SendingMessages_Taiko_Hyperlane,
     Suite_SingleIdentifierID_SendingMessages,
     Suite_SingleIdentifierID_OnchainUpgrade
 {}
