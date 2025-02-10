@@ -7,8 +7,10 @@ interface IConnector {
 
     function quote(uint256 _registryDst, bytes memory _payload) external view returns (uint256);
 
+    /// @dev deprecated
     function getProtocolId() external view returns (bytes32);
 
+    /// @dev deprecated
     function getDestinationChainId(uint256 nativeChainId) external view returns (uint256);
 
     function setConnectorId(uint32 _connectorId) external;
