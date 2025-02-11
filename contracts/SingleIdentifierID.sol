@@ -179,17 +179,12 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         Emitter storage emitter = emitters[_emitterId];
 
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(
-                    keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
-                    emitter.schemaId,
-                    msg.sender,
-                    keccak256(_data),
-                    keccak256(abi.encodePacked(_metadata))
-                )
-            )
-        );
+        bytes32 digest = getRegisteringSidDigest(
+                        emitter.schemaId,
+                        msg.sender,
+                        _data,
+                        _metadata
+                    );
 
         if (emitter.owner != ECDSA.recover(digest, _signature)) revert SignatureInvalid();
 
@@ -229,17 +224,12 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         Emitter storage emitter = emitters[_emitterId];
 
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(
-                    keccak256("UpdateParams(bytes32 sidId,uint64 expirationDate,bytes data,string metadata)"),
-                    _sidId,
-                    _expirationDate,
-                    keccak256(_data),
-                    keccak256(abi.encodePacked(_metadata))
-                )
-            )
-        );
+        bytes32 digest = getUpdatingSidDigest(
+                        _sidId,
+                        _expirationDate,
+                        _data,
+                        _metadata
+                    );
 
         if (emitter.owner != ECDSA.recover(digest, _signature)) revert SignatureInvalid();
 
@@ -389,18 +379,14 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes32 emitterId = _generateEmitterId(_schemaId, _registryChainId);
         if (emitters[emitterId].emitterId != bytes32(0)) revert EmitterAlreadyExists();
 
-        bytes32 registerDigest = _hashTypedDataV4WithoutDomain(
-            keccak256(
-                abi.encode(
-                    keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _schemaId,
-                    _emitterAddress,
-                    _registryChainId,
-                    _registeringFee,
-                    _expirationDate
-                )
-            )
-        );
+        bytes32 registerDigest = getRegisteringEmitterDigest(
+                        _schemaId,
+                        _registryChainId,
+                        _emitterAddress,
+                        _expirationDate,
+                        _registeringFee,
+                        _updatingFee
+                    );
 
         _checkRole(OPERATOR_ROLE, ECDSA.recover(registerDigest, _signature));
 
@@ -418,6 +404,86 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         emit EmitterRegistered(emitterId, _emitterAddress, _registryChainId);
 
         return emitterId;
+    }
+
+    /// @notice Generates digest for registering SID
+    /// @param _schemaId - Id of schema that should be used for registering SID
+    /// @param _user - Address of the user that should be registered
+    /// @param _data - SID data
+    /// @param _metadata - SID metadata
+    /// @return Digest for registering SID
+    function getRegisteringSidDigest(
+        bytes32 _schemaId,
+        address _user,
+        bytes calldata _data,
+        string calldata _metadata
+    ) public view returns (bytes32) {
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
+                    _schemaId,
+                    _user,
+                    keccak256(_data),
+                    keccak256(abi.encodePacked(_metadata))
+                )
+            )
+        );
+    }
+
+    /// @notice Generates digest for updating SID
+    /// @param _sidId - Id of SID that should be updated
+    /// @param _expirationDate - Timestamp when updated SID should expire
+    /// @param _data - Updated SID data
+    /// @param _metadata - Updated SID metadata
+    /// @return Digest for updating SID
+    function getUpdatingSidDigest(
+        bytes32 _sidId,
+        uint64 _expirationDate,
+        bytes calldata _data,
+        string calldata _metadata
+    ) public view returns (bytes32) {
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("UpdateParams(bytes32 sidId,uint64 expirationDate,bytes data,string metadata)"),
+                    _sidId,
+                    _expirationDate,
+                    keccak256(_data),
+                    keccak256(abi.encodePacked(_metadata))
+                )
+            )
+        );
+    }
+
+    /// @notice Generates digest for registering emitter
+    /// @param _schemaId - Id of schema that should be used for registering emitter
+    /// @param _registryChainId - Id of the chain with registry
+    /// @param _emitterAddress - Address of the emitters owner
+    /// @param _expirationDate - Timestamp when emitter expires
+    /// @param _registeringFee - Fee that would be collected by the emitter for registering SID
+    /// @param _updatingFee - Fee that would be collected by the emitter for updating SID
+    /// @return Digest for registering emitter
+    function getRegisteringEmitterDigest(
+        bytes32 _schemaId,
+        uint256 _registryChainId,
+        address _emitterAddress,
+        uint64 _expirationDate,
+        uint256 _registeringFee,
+        uint256 _updatingFee
+    ) public view returns (bytes32) {
+        return _hashTypedDataV4WithoutDomain(
+            keccak256(
+                abi.encode(
+                    keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
+                    _schemaId,
+                    _emitterAddress,
+                    _registryChainId,
+                    _registeringFee,
+                    _expirationDate
+                )
+            )
+        );
     }
 
     /// @dev limit upgrade to only operator
