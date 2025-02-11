@@ -19,7 +19,7 @@ contract HyperlaneConnector is Ownable, BaseConnector {
 
     error GasLimitInvalid();
 
-    function quote(uint32 _registryDst, bytes memory /*_payload*/) public virtual view returns (uint256) {
+    function quote(uint256 _registryDst, bytes memory /*_payload*/) public virtual view returns (uint256) {
         uint32 destination = uint32(customChainIds[_registryDst]);
         uint256 gasPayment = igp.quoteGasPayment(destination, gasLimit);
 
