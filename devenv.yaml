@@ -1,0 +1,8 @@
+inputs:
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling
+  foundry:
+    url: github:shazow/foundry.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs

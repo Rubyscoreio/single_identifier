@@ -30,5 +30,12 @@ package-error.log
 
 # NixOS devenv files
 /.direnv
+/.devenv
 .envrc
 flake.lock
+devenv.lock
+.devenv*
+devenv.local.nix
+
+# pre-commit
+.pre-commit-config.yaml
