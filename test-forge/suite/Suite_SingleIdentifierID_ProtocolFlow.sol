@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 
-import {Emitter} from "contracts/types/Structs.sol";
+import {EmitterFull} from "../harness/Harness_SingleIdentifierID.sol";
 import {IConnector} from "contracts/interfaces/IConnector.sol";
 import {MessageLib} from "contracts/lib/MessageLib.sol";
 import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
@@ -50,7 +50,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - SentRegisterSIDMessage event was emitted with the correct data
     */
     function test_RegisterSIDWithEmitter_Ok(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes calldata _data,
         string calldata _metadata,
@@ -58,17 +58,17 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         uint32 _emitterPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
         vm.assume(_data.length != 0);
-        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 protocolFee = singleId.protocolFee();
 
         uint256 protocolBalanceBefore = singleId.protocolBalance();
-        uint256 emitterBalanceBefore = singleId.emittersBalances(_emitter.emitterId);
+        uint256 emitterBalanceBefore = singleId.emittersBalances(_emitter.basic.emitterId);
 
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
         uint256 emitterPrivateKey = vm.deriveKey(_testMnemonic, _emitterPrivateKeyIndex);
@@ -81,19 +81,19 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
-        _emitter.owner = emitter;
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
+        _emitter.basic.owner = emitter;
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
+                    _emitter.basic.schemaId,
                     emitter,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -101,7 +101,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             keccak256(
                 abi.encode(
                     keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
-                    _emitter.schemaId,
+                    _emitter.basic.schemaId,
                     address(this),
                     keccak256(_data),
                     keccak256(abi.encodePacked(_metadata))
@@ -114,43 +114,44 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         bytes memory messagePayload = MessageLib.encodeMessage(
             MessageLib.SendMessage(
-                _emitter.schemaId,
+                _emitter.basic.schemaId,
                 address(this),
-                _emitter.expirationDate,
+                _emitter.basic.expirationDate,
                 _data,
                 _metadata
             )
         );
 
-        uint256 quote = connector.quote(_emitter.registryChainId, messagePayload);
+        uint256 quote = connector.quote(_emitter.basic.registryChainId, messagePayload);
 
-        vm.deal(address(this), _emitter.fee + quote + protocolFee);
+        vm.deal(address(this), _emitter.basic.fee + quote + protocolFee);
 
         vm.expectCall(
             address(router),
-            abi.encodeWithSelector(SingleRouter.getRoute.selector, _connectorId, _emitter.registryChainId)
+            abi.encodeWithSelector(SingleRouter.getRoute.selector, _connectorId, _emitter.basic.registryChainId)
         );
         vm.expectCall(
             address(connector),
-            abi.encodeWithSelector(IConnector.quote.selector, _emitter.registryChainId, messagePayload)
+            abi.encodeWithSelector(IConnector.quote.selector, _emitter.basic.registryChainId, messagePayload)
         );
         vm.expectCall(
             address(connector),
             quote,
-            abi.encodeWithSelector(IConnector.sendMessage.selector, _emitter.registryChainId, messagePayload)
+            abi.encodeWithSelector(IConnector.sendMessage.selector, _emitter.basic.registryChainId, messagePayload)
         );
 
         vm.expectEmit();
-        emit SingleIdentifierID.EmitterRegistered(_emitter.emitterId, emitter, _emitter.registryChainId);
+        emit SingleIdentifierID.EmitterRegistered(_emitter.basic.emitterId, emitter, _emitter.basic.registryChainId);
         vm.expectEmit();
-        emit SingleIdentifierID.SentRegisterSIDMessage(_emitter.schemaId, _connectorId, address(this), _emitter.registryChainId);
+        emit SingleIdentifierID.SentRegisterSIDMessage(_emitter.basic.schemaId, _connectorId, address(this), _emitter.basic.registryChainId);
         // Executing function
-        singleId.registerSIDWithEmitter{value: _emitter.fee + protocolFee + _defaultQuote}(
-            _emitter.schemaId,
+        singleId.registerSIDWithEmitter{value: _emitter.basic.fee + protocolFee + _defaultQuote}(
+            _emitter.basic.schemaId,
             _connectorId,
-            _emitter.expirationDate,
-            _emitter.fee,
-            _emitter.registryChainId,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
+            _emitter.basic.registryChainId,
             emitter,
             _data,
             _metadata,
@@ -162,20 +163,22 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             bytes32 addedEmitterId,
             bytes32 addedSchemaId,
             uint64 addedExpirationDate,
-            uint256 addedFee,
+            uint256 addedRegisteringFee,
+            uint256 addedUpdatingFee,
             uint256 addedRegistryChainId,
             address addedOwner
-        ) = singleId.emitters(_emitter.emitterId);
+        ) = singleId.getEmitter(_emitter.basic.emitterId);
 
         /// Asserting expectations
-        assertEq(addedEmitterId, _emitter.emitterId, "Created emitter has invalid emitterId");
-        assertEq(addedSchemaId, _emitter.schemaId, "Created emitter has invalid schemaId");
-        assertEq(addedExpirationDate, _emitter.expirationDate, "Created emitter has invalid expirationDate");
-        assertEq(addedFee, _emitter.fee, "Created emitter has invalid fee");
-        assertEq(addedRegistryChainId, _emitter.registryChainId, "Created emitter has invalid registryChainId");
-        assertEq(addedOwner, _emitter.owner, "Created emitter has invalid owner");
+        assertEq(addedEmitterId, _emitter.basic.emitterId, "Created emitter has invalid emitterId");
+        assertEq(addedSchemaId, _emitter.basic.schemaId, "Created emitter has invalid schemaId");
+        assertEq(addedExpirationDate, _emitter.basic.expirationDate, "Created emitter has invalid expirationDate");
+        assertEq(addedRegisteringFee, _emitter.basic.fee, "Created emitter has invalid registering fee");
+        assertEq(addedUpdatingFee, _emitter.updatingFee, "Created emitter has invalid updating fee");
+        assertEq(addedRegistryChainId, _emitter.basic.registryChainId, "Created emitter has invalid registryChainId");
+        assertEq(addedOwner, _emitter.basic.owner, "Created emitter has invalid owner");
         assertEq(protocolBalanceBefore + protocolFee, singleId.protocolBalance(), "Protocol balance was not increased");
-        assertEq(emitterBalanceBefore + _emitter.fee, singleId.emittersBalances(_emitter.emitterId), "Emitter balance was not increased");
+        assertEq(emitterBalanceBefore + _emitter.basic.fee, singleId.emittersBalances(_emitter.basic.emitterId), "Emitter balance was not increased");
     }
 
     /**
@@ -192,7 +195,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'SignatureInvalid()' error
     */
     function test_RegisterSIDWithEmitter_RevertIf_EmitterSignatureIsInvalid(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes calldata _data,
         string calldata _metadata,
@@ -203,11 +206,11 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         uint256 protocolFee = singleId.protocolFee();
 
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
         vm.assume(_emitterPrivateKeyIndex != _fakeSignerKeyIndex);
-        vm.assume(protocolFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(protocolFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -224,19 +227,19 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
-        _emitter.owner = emitter;
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
+        _emitter.basic.owner = emitter;
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -244,7 +247,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             keccak256(
                 abi.encode(
                     keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
-                    _emitter.schemaId,
+                    _emitter.basic.schemaId,
                     address(this),
                     keccak256(_data),
                     keccak256(abi.encodePacked(_metadata))
@@ -258,11 +261,12 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("SignatureInvalid()"));
         // Executing function
         singleId.registerSIDWithEmitter(
-            _emitter.schemaId,
+            _emitter.basic.schemaId,
             _connectorId,
-            _emitter.expirationDate,
-            _emitter.fee,
-            _emitter.registryChainId,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
+            _emitter.basic.registryChainId,
             emitter,
             _data,
             _metadata,
@@ -288,20 +292,20 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - SentRegisterSIDMessage event was emitted with the correct data
     */
     function test_RegisterSID_Ok(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes calldata _data,
         string calldata _metadata,
         uint32 _emitterPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_data.length != 0);
-        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 protocolBalanceBefore = singleId.protocolBalance();
-        uint256 emitterBalanceBefore = singleId.emittersBalances(_emitter.emitterId);
+        uint256 emitterBalanceBefore = singleId.emittersBalances(_emitter.basic.emitterId);
 
         uint256 protocolFee = singleId.protocolFee();
 
@@ -311,8 +315,8 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         vm.label(emitter, "emitter");
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
-        _emitter.owner = emitter;
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
+        _emitter.basic.owner = emitter;
 
         singleId.helper_setEmitter(_emitter);
 
@@ -321,7 +325,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             keccak256(
                 abi.encode(
                     keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
-                    _emitter.schemaId,
+                    _emitter.basic.schemaId,
                     address(this),
                     keccak256(_data),
                     keccak256(abi.encodePacked(_metadata))
@@ -333,37 +337,37 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         bytes memory messagePayload = MessageLib.encodeMessage(
             MessageLib.SendMessage(
-                _emitter.schemaId,
+                _emitter.basic.schemaId,
                 address(this),
-                _emitter.expirationDate,
+                _emitter.basic.expirationDate,
                 _data,
                 _metadata
             )
         );
 
-        uint256 quote = connector.quote(_emitter.registryChainId, messagePayload);
+        uint256 quote = connector.quote(_emitter.basic.registryChainId, messagePayload);
 
-        vm.deal(address(this), _emitter.fee + protocolFee + quote);
+        vm.deal(address(this), _emitter.basic.fee + protocolFee + quote);
 
         vm.expectCall(
             address(router),
-            abi.encodeWithSelector(SingleRouter.getRoute.selector, _connectorId, _emitter.registryChainId)
+            abi.encodeWithSelector(SingleRouter.getRoute.selector, _connectorId, _emitter.basic.registryChainId)
         );
         vm.expectCall(
             address(connector),
-            abi.encodeWithSelector(IConnector.quote.selector, _emitter.registryChainId, messagePayload)
+            abi.encodeWithSelector(IConnector.quote.selector, _emitter.basic.registryChainId, messagePayload)
         );
         vm.expectCall(
             address(connector),
             quote,
-            abi.encodeWithSelector(IConnector.sendMessage.selector, _emitter.registryChainId, messagePayload)
+            abi.encodeWithSelector(IConnector.sendMessage.selector, _emitter.basic.registryChainId, messagePayload)
         );
 
         vm.expectEmit();
-        emit SingleIdentifierID.SentRegisterSIDMessage(_emitter.schemaId, _connectorId, address(this), _emitter.registryChainId);
+        emit SingleIdentifierID.SentRegisterSIDMessage(_emitter.basic.schemaId, _connectorId, address(this), _emitter.basic.registryChainId);
         // Executing function
-        singleId.registerSID{value: _emitter.fee + protocolFee + quote}(
-            _emitter.emitterId,
+        singleId.registerSID{value: _emitter.basic.fee + protocolFee + quote}(
+            _emitter.basic.emitterId,
             _connectorId,
             _data,
             emitterSignature,
@@ -372,7 +376,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         /// Asserting expectations
         assertEq(protocolBalanceBefore + protocolFee, singleId.protocolBalance(), "Protocol balance was not increased");
-        assertEq(emitterBalanceBefore + _emitter.fee, singleId.emittersBalances(_emitter.emitterId), "Emitter balance was not increased");
+        assertEq(emitterBalanceBefore + _emitter.basic.fee, singleId.emittersBalances(_emitter.basic.emitterId), "Emitter balance was not increased");
     }
 
     /**
@@ -387,16 +391,16 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'EmitterNotExists()' error
     */
     function test_RegisterSID_RevertIf_EmitterNotExists(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes calldata _data,
         string calldata _metadata,
         uint32 _emitterPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_data.length != 0);
-        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 protocolFee = singleId.protocolFee();
@@ -407,15 +411,15 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         vm.label(emitter, "emitter");
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
-        _emitter.owner = emitter;
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
+        _emitter.basic.owner = emitter;
 
         /// Preparing signature
         bytes32 registerSIDDigest = singleId.workaround_hashTypedDataV4(
             keccak256(
                 abi.encode(
                     keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
-                    _emitter.schemaId,
+                    _emitter.basic.schemaId,
                     address(this),
                     keccak256(_data),
                     keccak256(abi.encodePacked(_metadata))
@@ -427,22 +431,22 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         bytes memory messagePayload = MessageLib.encodeMessage(
             MessageLib.SendMessage(
-                _emitter.schemaId,
+                _emitter.basic.schemaId,
                 address(this),
-                _emitter.expirationDate,
+                _emitter.basic.expirationDate,
                 _data,
                 _metadata
             )
         );
 
-        uint256 quote = connector.quote(_emitter.registryChainId, messagePayload);
+        uint256 quote = connector.quote(_emitter.basic.registryChainId, messagePayload);
 
-        vm.deal(address(this), _emitter.fee + protocolFee + quote);
+        vm.deal(address(this), _emitter.basic.fee + protocolFee + quote);
 
         vm.expectRevert(abi.encodeWithSignature("EmitterNotExists()"));
         // Executing function
-        singleId.registerSID{value: _emitter.fee + protocolFee + quote}(
-            _emitter.emitterId,
+        singleId.registerSID{value: _emitter.basic.fee + protocolFee + quote}(
+            _emitter.basic.emitterId,
             _connectorId,
             _data,
             emitterSignature,
@@ -462,7 +466,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'SignatureInvalid()' error
     */
     function test_RegisterSID_RevertIf_EmitterSignatureIsInvalid(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes calldata _data,
         string calldata _metadata,
@@ -471,16 +475,16 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         uint256 protocolFee = singleId.protocolFee();
 
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_data.length != 0);
-        vm.assume(protocolFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(protocolFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 fakeSignerPrivateKey = vm.deriveKey(_testMnemonic, _fakeSignerKeyIndex);
 
         address fakeSigner = vm.addr(fakeSignerPrivateKey);
 
-        vm.assume(fakeSigner != _emitter.owner);
+        vm.assume(fakeSigner != _emitter.basic.owner);
 
         vm.label(fakeSigner, "fakeSigner");
 
@@ -491,7 +495,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             keccak256(
                 abi.encode(
                     keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
-                    _emitter.schemaId,
+                    _emitter.basic.schemaId,
                     address(this),
                     keccak256(_data),
                     keccak256(abi.encodePacked(_metadata))
@@ -504,7 +508,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("SignatureInvalid()"));
         // Executing function
         singleId.registerSID(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _connectorId,
             _data,
             invalidSignature,
@@ -523,15 +527,15 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'DataIsEmpty()' error
     */
     function test_RegisterSID_RevertIf_DataIsEmpty(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes calldata _data,
         string calldata _metadata,
         uint32 _emitterPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
-        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
+        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 protocolFee = singleId.protocolFee();
@@ -542,8 +546,8 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         vm.label(emitter, "emitter");
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
-        _emitter.owner = emitter;
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
+        _emitter.basic.owner = emitter;
 
         singleId.helper_setEmitter(_emitter);
 
@@ -552,7 +556,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             keccak256(
                 abi.encode(
                     keccak256("RegisterParams(bytes32 schemaId,address user,bytes data,string metadata)"),
-                    _emitter.schemaId,
+                    _emitter.basic.schemaId,
                     address(this),
                     keccak256(_data),
                     keccak256(abi.encodePacked(_metadata))
@@ -564,22 +568,22 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         bytes memory messagePayload = MessageLib.encodeMessage(
             MessageLib.SendMessage(
-                _emitter.schemaId,
+                _emitter.basic.schemaId,
                 address(this),
-                _emitter.expirationDate,
+                _emitter.basic.expirationDate,
                 _data,
                 _metadata
             )
         );
 
-        uint256 quote = connector.quote(_emitter.registryChainId, messagePayload);
+        uint256 quote = connector.quote(_emitter.basic.registryChainId, messagePayload);
 
-        vm.deal(address(this), _emitter.fee + protocolFee + quote);
+        vm.deal(address(this), _emitter.basic.fee + protocolFee + quote);
 
         vm.expectRevert(abi.encodeWithSignature("DataIsEmpty()"));
         // Executing function
-        singleId.registerSID{value: _emitter.fee + protocolFee + quote}(
-            _emitter.emitterId,
+        singleId.registerSID{value: _emitter.basic.fee + protocolFee + quote}(
+            _emitter.basic.emitterId,
             _connectorId,
             bytes(""),
             emitterSignature,
@@ -600,16 +604,16 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'SignatureInvalid()' error
     */
     function test_RegisterSID_RevertIf_SignatureIsEmpty(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes calldata _data,
         string calldata _metadata,
         uint32 _emitterPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_data.length != 0);
-        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 protocolFee = singleId.protocolFee();
@@ -620,29 +624,29 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         vm.label(emitter, "emitter");
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
-        _emitter.owner = emitter;
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
+        _emitter.basic.owner = emitter;
 
         singleId.helper_setEmitter(_emitter);
 
         bytes memory messagePayload = MessageLib.encodeMessage(
             MessageLib.SendMessage(
-                _emitter.schemaId,
+                _emitter.basic.schemaId,
                 address(this),
-                _emitter.expirationDate,
+                _emitter.basic.expirationDate,
                 _data,
                 _metadata
             )
         );
 
-        uint256 quote = connector.quote(_emitter.registryChainId, messagePayload);
+        uint256 quote = connector.quote(_emitter.basic.registryChainId, messagePayload);
 
-        vm.deal(address(this), _emitter.fee + protocolFee + quote);
+        vm.deal(address(this), _emitter.basic.fee + protocolFee + quote);
 
         vm.expectRevert(abi.encodeWithSignature("SignatureInvalid()"));
         // Executing function
-        singleId.registerSID{value: _emitter.fee + protocolFee + quote}(
-            _emitter.emitterId,
+        singleId.registerSID{value: _emitter.basic.fee + protocolFee + quote}(
+            _emitter.basic.emitterId,
             _connectorId,
             _data,
             bytes(""),
@@ -670,7 +674,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - SentRegisterSIDMessage event was emitted with the correct data
     */
     function test_UpdateSID_Ok(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes32 _sidId,
         uint64 _expirationDate,
@@ -681,13 +685,13 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         /// Validating restrictions
         vm.assume(_expirationDate > block.timestamp);
         vm.assume(_data.length != 0);
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_sidId != bytes32(0));
-        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.updatingFee);
 
         /// Preparing environment
         uint256 protocolBalanceBefore = singleId.protocolBalance();
-        uint256 emitterBalanceBefore = singleId.emittersBalances(_emitter.emitterId);
+        uint256 emitterBalanceBefore = singleId.emittersBalances(_emitter.basic.emitterId);
 
         uint256 protocolFee = singleId.protocolFee();
 
@@ -697,7 +701,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         vm.label(emitter, "emitter");
 
-        _emitter.owner = emitter;
+        _emitter.basic.owner = emitter;
 
         singleId.helper_setEmitter(_emitter);
 
@@ -724,29 +728,29 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
                 _metadata)
         );
 
-        uint256 quote = connector.quote(_emitter.registryChainId, messagePayload);
+        uint256 quote = connector.quote(_emitter.basic.registryChainId, messagePayload);
 
-        vm.deal(address(this), _emitter.fee + quote + protocolFee);
+        vm.deal(address(this), _emitter.updatingFee + quote + protocolFee);
 
         vm.expectCall(
             address(router),
-            abi.encodeWithSelector(SingleRouter.getRoute.selector, _connectorId, _emitter.registryChainId)
+            abi.encodeWithSelector(SingleRouter.getRoute.selector, _connectorId, _emitter.basic.registryChainId)
         );
         vm.expectCall(
             address(connector),
-            abi.encodeWithSelector(IConnector.quote.selector, _emitter.registryChainId, messagePayload)
+            abi.encodeWithSelector(IConnector.quote.selector, _emitter.basic.registryChainId, messagePayload)
         );
         vm.expectCall(
             address(connector),
             quote,
-            abi.encodeWithSelector(IConnector.sendMessage.selector, _emitter.registryChainId, messagePayload)
+            abi.encodeWithSelector(IConnector.sendMessage.selector, _emitter.basic.registryChainId, messagePayload)
         );
 
         vm.expectEmit();
-        emit SingleIdentifierID.SentUpdateSIDMessage(_sidId, _connectorId, address(this), _emitter.registryChainId);
+        emit SingleIdentifierID.SentUpdateSIDMessage(_sidId, _connectorId, address(this), _emitter.basic.registryChainId);
         // Executing function
-        singleId.updateSID{value: _emitter.fee + protocolFee + _defaultQuote}(
-            _emitter.emitterId,
+        singleId.updateSID{value: _emitter.updatingFee + protocolFee + _defaultQuote}(
+            _emitter.basic.emitterId,
             _connectorId,
             _sidId,
             _expirationDate,
@@ -757,7 +761,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         /// Asserting expectations
         assertEq(protocolBalanceBefore + protocolFee, singleId.protocolBalance(), "Protocol balance was not increased");
-        assertEq(emitterBalanceBefore + _emitter.fee, singleId.emittersBalances(_emitter.emitterId), "Emitter balance was not increased");
+        assertEq(emitterBalanceBefore + _emitter.updatingFee, singleId.emittersBalances(_emitter.basic.emitterId), "Emitter balance was not increased");
     }
 
     /**
@@ -774,7 +778,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'ExpirationDateInvalid()' error
     */
     function test_UpdateSID_RevertIf_ExpirationDateIsInvalid(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes32 _sidId,
         uint64 _expirationDate,
@@ -785,7 +789,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         /// Validating restrictions
         vm.assume(_expirationDate < block.timestamp);
         vm.assume(_data.length != 0);
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_sidId != bytes32(0));
 
         /// Preparing environment
@@ -815,7 +819,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("ExpirationDateInvalid()"));
         // Executing function
         singleId.updateSID(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _connectorId,
             _sidId,
             _expirationDate,
@@ -838,7 +842,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'DataIsEmpty()' error
     */
     function test_UpdateSID_RevertIf_DataIsEmpty(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes32 _sidId,
         uint64 _expirationDate,
@@ -848,7 +852,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
     ) public {
         /// Validating restrictions
         vm.assume(_expirationDate > block.timestamp);
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_sidId != bytes32(0));
 
         /// Preparing environment
@@ -878,7 +882,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("DataIsEmpty()"));
         // Executing function
         singleId.updateSID(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _connectorId,
             _sidId,
             _expirationDate,
@@ -902,7 +906,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'SignatureInvalid()' error
     */
     function test_UpdateSID_RevertIf_SignatureIsEmpty(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes32 _sidId,
         uint64 _expirationDate,
@@ -915,7 +919,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.assume(_expirationDate > block.timestamp);
         vm.assume(_data.length != 0);
         vm.assume(_invalidSignature.length != 65);
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_sidId != bytes32(0));
 
         /// Preparing environment
@@ -930,7 +934,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("SignatureInvalid()"));
         // Executing function
         singleId.updateSID(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _connectorId,
             _sidId,
             _expirationDate,
@@ -953,7 +957,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - reverts with the 'SIDNotValid()' error
     */
     function test_UpdateSID_RevertIf_SIDIdIsEmpty(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes32 _sidId,
         uint64 _expirationDate,
@@ -964,7 +968,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         /// Validating restrictions
         vm.assume(_expirationDate > block.timestamp);
         vm.assume(_data.length != 0);
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
 
         /// Preparing environment
         uint256 emitterPrivateKey = vm.deriveKey(_testMnemonic, _emitterPrivateKeyIndex);
@@ -993,7 +997,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("SIDNotValid()"));
         // Executing function
         singleId.updateSID(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _connectorId,
             bytes32(0),
             _expirationDate,
@@ -1016,7 +1020,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - Revert with the 'AccessControl: account 0x... is missing role 0x...' error
     */
     function test_UpdateSID_RevertIf_SenderIsNotAnEmitter(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _connectorId,
         bytes32 _sidId,
         uint64 _expirationDate,
@@ -1027,9 +1031,9 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         /// Validating restrictions
         vm.assume(_expirationDate > block.timestamp);
         vm.assume(_data.length != 0);
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_sidId != bytes32(0));
-        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.fee);
+        vm.assume(_defaultFee + _defaultQuote < type(uint256).max - _emitter.basic.fee);
 
         /// Preparing environment
         uint256 signerPrivateKey = vm.deriveKey(_testMnemonic, _signerPrivateKeyIndex);
@@ -1060,7 +1064,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("SignatureInvalid()"));
         // Executing function
         singleId.updateSID(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _connectorId,
             _sidId,
             _expirationDate,
@@ -1082,12 +1086,12 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - UpdateEmitter event was emitted with the correct data
     */
     function test_UpdateEmitter_Ok(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address _newEmitter,
         address _operator
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_newEmitter != address(0));
 
         /// Preparing environment
@@ -1098,16 +1102,16 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         singleId.helper_setEmitter(_emitter);
 
         vm.expectEmit();
-        emit SingleIdentifierID.UpdateEmitter(_emitter.emitterId, _newEmitter);
+        emit SingleIdentifierID.UpdateEmitter(_emitter.basic.emitterId, _newEmitter);
         vm.prank(_operator);
         // Executing function
         singleId.updateEmitter(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _newEmitter
         );
 
         /// Asserting expectations
-        (,,,,,address newOwner) = singleId.emitters(_emitter.emitterId);
+        (,,,,,address newOwner) = singleId.emitters(_emitter.basic.emitterId);
         assertEq(newOwner, _newEmitter, "New emitter owner was not set");
     }
 
@@ -1121,7 +1125,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - reverts with the 'EmitterNotExists()' error
     */
     function test_UpdateEmitter_RevertIf_EmitterNotExists(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address _newEmitter,
         address _operator
     ) public {
@@ -1137,7 +1141,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("EmitterNotExists()"));
         // Executing function
         singleId.updateEmitter(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _newEmitter
         );
     }
@@ -1153,11 +1157,11 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'AccessControl: account 0x... is missing role 0x...' error
     */
     function test_UpdateEmitter_RevertIf_SenderIsNotAnOperator(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address _newEmitter
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_newEmitter != address(0));
 
         /// Preparing environment
@@ -1173,7 +1177,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         );
         // Executing function
         singleId.updateEmitter(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _newEmitter
         );
     }
@@ -1188,11 +1192,11 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - reverts with the 'AddressIsZero()' error
     */
     function test_UpdateEmitter_RevertIf_NewEmitterOwnerIsZero(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address _operator
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
 
         /// Preparing environment
         singleId.helper_grantRole(OPERATOR_ROLE, _operator);
@@ -1205,7 +1209,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.prank(_operator);
         // Executing function
         singleId.updateEmitter(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             address(0)
         );
     }
@@ -1224,18 +1228,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - Withdrawal event was emitted with the correct data
     */
     function test_WithdrawEmitter_Ok(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address payable _receiver,
         uint256 _amount
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_receiver != address(0));
         assumePayable(_receiver);
 
         /// Preparing environment
         singleId.helper_setEmitter(_emitter);
-        singleId.helper_setEmitterBalance(_emitter.emitterId, _amount);
+        singleId.helper_setEmitterBalance(_emitter.basic.emitterId, _amount);
 
         vm.deal(address(singleId), _amount);
 
@@ -1250,16 +1254,16 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         vm.expectEmit();
         emit SingleIdentifierID.Withdrawal(_receiver, _amount);
-        vm.prank(_emitter.owner);
+        vm.prank(_emitter.basic.owner);
         // Executing function
         singleId.withdraw(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             _receiver
         );
 
         /// Asserting expectations
         uint256 balanceSingleIdAfter = address(singleId).balance;
-        uint256 balanceEmitterAfter = singleId.emittersBalances(_emitter.emitterId);
+        uint256 balanceEmitterAfter = singleId.emittersBalances(_emitter.basic.emitterId);
         uint256 balanceReceiverAfter = _receiver.balance;
 
         assertEq(balanceEmitterAfter, 0, "Emitter balance was not set to 0");
@@ -1277,7 +1281,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'EmitterNotExists()' error
     */
     function test_WithdrawEmitter_RevertIf_EmitterNotExists(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address payable _receiver,
         uint256 _amount
     ) public {
@@ -1285,13 +1289,13 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.assume(_receiver != address(0));
 
         /// Preparing environment
-        singleId.helper_setEmitterBalance(_emitter.emitterId, _amount);
+        singleId.helper_setEmitterBalance(_emitter.basic.emitterId, _amount);
 
         vm.expectRevert(abi.encodeWithSignature("EmitterNotExists()"));
-        vm.prank(_emitter.owner);
+        vm.prank(_emitter.basic.owner);
         // Executing function
         singleId.withdraw(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             payable(_receiver)
         );
     }
@@ -1306,21 +1310,21 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - reverts with the 'AddressIsZero()' error
     */
     function test_WithdrawEmitter_RevertIf_ReceiverIsZero(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint256 _amount
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
 
         /// Preparing environment
         singleId.helper_setEmitter(_emitter);
-        singleId.helper_setEmitterBalance(_emitter.emitterId, _amount);
+        singleId.helper_setEmitterBalance(_emitter.basic.emitterId, _amount);
 
         vm.expectRevert(abi.encodeWithSignature("AddressIsZero()"));
-        vm.prank(_emitter.owner);
+        vm.prank(_emitter.basic.owner);
         // Executing function
         singleId.withdraw(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             payable(address(0))
         );
     }
@@ -1336,25 +1340,25 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - reverts with the 'AccessControl: account 0x... is missing role 0x...' error
     */
     function test_WithdrawEmitter_RevertIf_SenderIsNotAnEmitter(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address _sender,
         address payable _receiver,
         uint256 _amount
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_receiver != address(0));
-        vm.assume(_sender != _emitter.owner);
+        vm.assume(_sender != _emitter.basic.owner);
 
         /// Preparing environment
         singleId.helper_setEmitter(_emitter);
-        singleId.helper_setEmitterBalance(_emitter.emitterId, _amount);
+        singleId.helper_setEmitterBalance(_emitter.basic.emitterId, _amount);
 
         vm.expectRevert(abi.encodeWithSignature("SenderNotEmitter()"));
         vm.prank(_sender);
         // Executing function
         singleId.withdraw(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             payable(_receiver)
         );
     }
@@ -1372,18 +1376,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - reverts with the 'Failed to send Ether' error
     */
     function test_WithdrawEmitter_RevertIf_FailedToSendEther(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address payable _receiver,
         uint256 _amount
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
         vm.assume(_receiver != address(0));
         assumePayable(_receiver);
 
         /// Preparing environment
         singleId.helper_setEmitter(_emitter);
-        singleId.helper_setEmitterBalance(_emitter.emitterId, _amount);
+        singleId.helper_setEmitterBalance(_emitter.basic.emitterId, _amount);
 
         vm.deal(address(singleId), _amount);
 
@@ -1392,10 +1396,10 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.mockCallRevert(_receiver, callData, revertData);
 
         vm.expectRevert("Failed to send Ether");
-        vm.prank(_emitter.owner);
+        vm.prank(_emitter.basic.owner);
         // Executing function
         singleId.withdraw(
-            _emitter.emitterId,
+            _emitter.basic.emitterId,
             payable(_receiver)
         );
     }
@@ -1566,14 +1570,14 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - returned freshly created emitter
     */
     function test_RegisterEmitter_Ok(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _operatorPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.owner != address(0));
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.owner != address(0));
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -1584,18 +1588,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -1603,14 +1607,15 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         bytes memory signature = helper_sign(operatorPrivateKey, registerEmitterDigest);
 
         vm.expectEmit();
-        emit SingleIdentifierID.EmitterRegistered(_emitter.emitterId, _emitter.owner, _emitter.registryChainId);
+        emit SingleIdentifierID.EmitterRegistered(_emitter.basic.emitterId, _emitter.basic.owner, _emitter.basic.registryChainId);
         // Executing function
         bytes32 result = singleId.registerEmitter(
-            _emitter.schemaId,
-            _emitter.registryChainId,
-            _emitter.owner,
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.schemaId,
+            _emitter.basic.registryChainId,
+            _emitter.basic.owner,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             signature
         );
 
@@ -1618,19 +1623,21 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             bytes32 addedEmitterId,
             bytes32 addedSchemaId,
             uint64 addedExpirationDate,
-            uint256 addedFee,
+            uint256 addedRegisteringFee,
+            uint256 addedUpdatingFee,
             uint256 addedRegistryChainId,
             address addedOwner
-        ) = singleId.emitters(_emitter.emitterId);
+        ) = singleId.getEmitter(_emitter.basic.emitterId);
 
         /// Asserting expectations
-        assertEq(result, _emitter.emitterId, "Returned emitter id is not correct");
-        assertEq(addedEmitterId, _emitter.emitterId, "Created emitter has invalid emitterId");
-        assertEq(addedSchemaId, _emitter.schemaId, "Created emitter has invalid schemaId");
-        assertEq(addedExpirationDate, _emitter.expirationDate, "Created emitter has invalid expirationDate");
-        assertEq(addedFee, _emitter.fee, "Created emitter has invalid fee");
-        assertEq(addedRegistryChainId, _emitter.registryChainId, "Created emitter has invalid registryChainId");
-        assertEq(addedOwner, _emitter.owner, "Created emitter has invalid owner");
+        assertEq(result, _emitter.basic.emitterId, "Returned emitter id is not correct");
+        assertEq(addedEmitterId, _emitter.basic.emitterId, "Created emitter has invalid emitterId");
+        assertEq(addedSchemaId, _emitter.basic.schemaId, "Created emitter has invalid schemaId");
+        assertEq(addedExpirationDate, _emitter.basic.expirationDate, "Created emitter has invalid expirationDate");
+        assertEq(addedRegisteringFee, _emitter.basic.fee, "Created emitter has invalid registering fee");
+        assertEq(addedUpdatingFee, _emitter.updatingFee, "Created emitter has invalid updating fee");
+        assertEq(addedRegistryChainId, _emitter.basic.registryChainId, "Created emitter has invalid registryChainId");
+        assertEq(addedOwner, _emitter.basic.owner, "Created emitter has invalid owner");
     }
 
     /**
@@ -1646,13 +1653,13 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'SchemaIdInvalid()' error
     */
     function test_RegisterEmitter_RevertIf_SchemaIdIsZero(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _operatorPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.owner != address(0));
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.owner != address(0));
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -1663,18 +1670,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -1685,10 +1692,11 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         // Executing function
         singleId.registerEmitter(
             0,
-            _emitter.registryChainId,
-            _emitter.owner,
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.registryChainId,
+            _emitter.basic.owner,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             signature
         );
     }
@@ -1706,14 +1714,14 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'ExpirationDateInvalid()' error
     */
     function test_RegisterEmitter_RevertIf_ExpirationDateIsInvalid(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _operatorPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate <= block.timestamp);
-        vm.assume(_emitter.owner != address(0));
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate <= block.timestamp);
+        vm.assume(_emitter.basic.owner != address(0));
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -1724,18 +1732,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -1745,11 +1753,12 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("ExpirationDateInvalid()"));
         // Executing function
         singleId.registerEmitter(
-            _emitter.schemaId,
-            _emitter.registryChainId,
-            _emitter.owner,
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.schemaId,
+            _emitter.basic.registryChainId,
+            _emitter.basic.owner,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             signature
         );
     }
@@ -1766,13 +1775,13 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'ChainIdInvalid()' error
     */
     function test_RegisterEmitter_RevertIf_ChainIdIsZero(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _operatorPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.owner != address(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.owner != address(0));
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -1783,18 +1792,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -1804,11 +1813,12 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("ChainIdInvalid()"));
         // Executing function
         singleId.registerEmitter(
-            _emitter.schemaId,
+            _emitter.basic.schemaId,
             0,
-            _emitter.owner,
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.owner,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             signature
         );
     }
@@ -1825,13 +1835,13 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'ChainIdInvalid()' error
     */
     function test_RegisterEmitter_RevertIf_EmitterAddressIsZero(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _operatorPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -1842,18 +1852,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -1863,11 +1873,12 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("AddressIsZero()"));
         // Executing function
         singleId.registerEmitter(
-            _emitter.schemaId,
-            _emitter.registryChainId,
+            _emitter.basic.schemaId,
+            _emitter.basic.registryChainId,
             address(0),
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             signature
         );
     }
@@ -1885,25 +1896,26 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'SignatureInvalid()' error
     */
     function test_RegisterEmitter_RevertIf_SignatureIsEmpty(
-        Emitter memory _emitter
+        EmitterFull memory _emitter
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.owner != address(0));
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.owner != address(0));
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
 
         /// Preparing environment
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         vm.expectRevert(abi.encodeWithSignature("SignatureInvalid()"));
         // Executing function
         singleId.registerEmitter(
-            _emitter.schemaId,
-            _emitter.registryChainId,
-            _emitter.owner,
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.schemaId,
+            _emitter.basic.registryChainId,
+            _emitter.basic.owner,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             bytes("")
         );
     }
@@ -1921,14 +1933,14 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'EmitterAlreadyExists()' error
     */
     function test_RegisterEmitter_RevertIf_EmitterAlreadyExists(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _operatorPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.owner != address(0));
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.owner != address(0));
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -1939,7 +1951,7 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         singleId.helper_grantRole(OPERATOR_ROLE, operator);
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         singleId.helper_setEmitter(_emitter);
 
@@ -1948,11 +1960,11 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -1962,11 +1974,12 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         vm.expectRevert(abi.encodeWithSignature("EmitterAlreadyExists()"));
         // Executing function
         singleId.registerEmitter(
-            _emitter.schemaId,
-            _emitter.registryChainId,
-            _emitter.owner,
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.schemaId,
+            _emitter.basic.registryChainId,
+            _emitter.basic.owner,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             signature
         );
     }
@@ -1984,14 +1997,14 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'AccessControl: account 0x... is missing role 0x...' error
     */
     function test_RegisterEmitter_RevertIf_SignatureSignerIsNotAnOperator(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint32 _operatorPrivateKeyIndex
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.schemaId != bytes32(0));
-        vm.assume(_emitter.expirationDate > block.timestamp);
-        vm.assume(_emitter.owner != address(0));
-        vm.assume(_emitter.registryChainId != uint256(0));
+        vm.assume(_emitter.basic.schemaId != bytes32(0));
+        vm.assume(_emitter.basic.expirationDate > block.timestamp);
+        vm.assume(_emitter.basic.owner != address(0));
+        vm.assume(_emitter.basic.registryChainId != uint256(0));
 
         /// Preparing environment
         uint256 operatorPrivateKey = vm.deriveKey(_testMnemonic, _operatorPrivateKeyIndex);
@@ -2000,18 +2013,18 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
 
         vm.label(operator, "operator");
 
-        _emitter.emitterId = singleId.workaround_generateEmitterId(_emitter.schemaId, _emitter.registryChainId);
+        _emitter.basic.emitterId = singleId.workaround_generateEmitterId(_emitter.basic.schemaId, _emitter.basic.registryChainId);
 
         /// Preparing signatures
         bytes32 registerEmitterDigest = singleId.workaround_hashTypedDataV4WithoutDomain(
             keccak256(
                 abi.encode(
                     keccak256("RegistryEmitterParams(bytes32 schemaId,address emitterAddress,uint256 registryChainId,uint256 fee,uint64 expirationDate)"),
-                    _emitter.schemaId,
-                    _emitter.owner,
-                    _emitter.registryChainId,
-                    _emitter.fee,
-                    _emitter.expirationDate
+                    _emitter.basic.schemaId,
+                    _emitter.basic.owner,
+                    _emitter.basic.registryChainId,
+                    _emitter.basic.fee,
+                    _emitter.basic.expirationDate
                 )
             )
         );
@@ -2028,11 +2041,12 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         );
         // Executing function
         singleId.registerEmitter(
-            _emitter.schemaId,
-            _emitter.registryChainId,
-            _emitter.owner,
-            _emitter.expirationDate,
-            _emitter.fee,
+            _emitter.basic.schemaId,
+            _emitter.basic.registryChainId,
+            _emitter.basic.owner,
+            _emitter.basic.expirationDate,
+            _emitter.basic.fee,
+            _emitter.updatingFee,
             signature
         );
     }
@@ -2047,26 +2061,29 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - new fee for emitter was set
     */
     function test_UpdateFee_Ok(
-        Emitter memory _emitter,
-        uint256 _fee
+        EmitterFull memory _emitter,
+        uint256 _registeringFee,
+        uint256 _updatingFee
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
 
         /// Preparing environment
         singleId.helper_setEmitter(_emitter);
 
         /// Executing function
-        vm.prank(_emitter.owner);
+        vm.prank(_emitter.basic.owner);
         singleId.updateFee(
-            _emitter.emitterId,
-            _fee
+            _emitter.basic.emitterId,
+            _registeringFee,
+            _updatingFee
         );
 
-        (,,, uint256 updatedFee,,) = singleId.emitters(_emitter.emitterId);
+        (,,, uint256 newRegisteringFee, uint256 newUpdatingFee,,) = singleId.getEmitter(_emitter.basic.emitterId);
 
         /// Asserting expectations
-        assertEq(updatedFee, _fee, "Fee updated incorrectly");
+        assertEq(newRegisteringFee, _registeringFee, "Registering fee updated incorrectly");
+        assertEq(newUpdatingFee, _updatingFee, "Updating fee updated incorrectly");
     }
 
     /**
@@ -2078,18 +2095,20 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - execution reverts with the 'EmitterNotExists()' error
     */
     function test_UpdateFee_RevertIf_EmitterNotExists(
-        Emitter memory _emitter,
-        uint256 _fee
+        EmitterFull memory _emitter,
+        uint256 _registeringFee,
+        uint256 _updatingFee
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
 
         vm.expectRevert(abi.encodeWithSignature("EmitterNotExists()"));
         /// Executing function
-        vm.prank(_emitter.owner);
+        vm.prank(_emitter.basic.owner);
         singleId.updateFee(
-            _emitter.emitterId,
-            _fee
+            _emitter.basic.emitterId,
+            _registeringFee,
+            _updatingFee
         );
     }
 
@@ -2100,16 +2119,17 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
             - _emitter.emitterId can't be empty
         Flow: registerEmitter function called with the correct params from the address that is not emitters owner
         Expects:
-            - new fee for emitter was set
+            - execution reverts with the "SenderNotEmitter" error
     */
     function test_UpdateFee_RevertIf_SenderIsNotAnEmitter(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         address _sender,
-        uint256 _fee
+        uint256 _registeringFee,
+        uint256 _updatingFee
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
-        vm.assume(_sender != _emitter.owner);
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
+        vm.assume(_sender != _emitter.basic.owner);
 
         /// Preparing environment
         singleId.helper_setEmitter(_emitter);
@@ -2118,8 +2138,9 @@ abstract contract Suite_SingleIdentifierID_ProtocolFlow is Storage_SingleIdentif
         /// Executing function
         vm.prank(_sender);
         singleId.updateFee(
-            _emitter.emitterId,
-            _fee
+            _emitter.basic.emitterId,
+            _registeringFee,
+            _updatingFee
         );
     }
 }

@@ -104,7 +104,8 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     /// @param _schemaId - Id of schema that would be used by the emitter
     /// @param _connectorId - Id of connector that should be used for sending registering message
     /// @param _expirationDate - Timestamp when emitter expires
-    /// @param _fee - Fee that would be collected by the emitter for registering and updating SID
+    /// @param _registeringFee - Fee that would be collected by the emitter for registering SID
+    /// @param _updatingFee - Fee that would be collected by the emitter for updating SID
     /// @param _registryChainId - Id of the chain with registry
     /// @param _emitterAddress - Address of the emitters owner
     /// @param _data - Data that would be sent with registering message
@@ -115,7 +116,8 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes32 _schemaId,
         uint32 _connectorId,
         uint64 _expirationDate,
-        uint256 _fee,
+        uint256 _registeringFee,
+        uint256 _updatingFee,
         uint256 _registryChainId,
         address _emitterAddress,
         bytes calldata _data,
@@ -128,7 +130,8 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
             _registryChainId,
             _emitterAddress,
             _expirationDate,
-            _fee,
+            _registeringFee,
+            _updatingFee,
             _signature
         );
 
@@ -150,7 +153,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
             emitterId,
             _schemaId,
             _connectorId,
-            _fee,
+            _registeringFee,
             _registryChainId,
             _expirationDate,
             _data,
@@ -243,7 +246,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         _sendUpdateSIDMessage(
             emitter.emitterId,
             _connectorId,
-            emitter.fee,
+            _getEmitterUpdatingFee(emitter.emitterId),
             emitter.registryChainId,
             _sidId,
             _expirationDate,
@@ -265,13 +268,15 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
     /// @notice Updates fee for emitter
     /// @param _emitterId - Id of emitter that should be updated
-    /// @param _fee - New fee for emitter
-    function updateFee(bytes32 _emitterId, uint256 _fee) external checkEmitter(_emitterId) {
+    /// @param _registeringFee - New fee for registering SID
+    /// @param _updatingFee - New fee for updating SID
+    function updateFee(bytes32 _emitterId, uint256 _registeringFee, uint256 _updatingFee) external checkEmitter(_emitterId) {
         Emitter storage emitter = emitters[_emitterId];
 
         if (msg.sender != emitter.owner) revert SenderNotEmitter();
 
-        emitters[_emitterId].fee = _fee;
+        emitters[_emitterId].fee = _registeringFee;
+        _setEmitterUpdatingFee(_emitterId, _updatingFee);
     }
 
     /// @notice Sends fees collected by emitter to specified address
@@ -328,12 +333,42 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         emit SetEmitterBalance(_emitterId, _balance);
     }
 
+    /// @notice Returns emitter data
+    /// @param _emitterId - Id of the emitter
+    /// @return emitterId - Id of the emitter
+    /// @return schemaId - Id of the schema that is used by the emitter
+    /// @return expirationDate - Timestamp when emitter expires
+    /// @return registeringFee - Fee that is collected by the emitter for registering SID
+    /// @return updatingFee - Fee that is collected by the emitter for updating SID
+    /// @return registryChainId - Id of the chain with registry
+    /// @return owner - Address of the emitters owner
+    function getEmitter(bytes32 _emitterId) external view returns (
+        bytes32 emitterId,
+        bytes32 schemaId,
+        uint64 expirationDate,
+        uint256 registeringFee,
+        uint256 updatingFee,
+        uint256 registryChainId,
+        address owner
+    ) {
+        Emitter storage emitter = emitters[_emitterId];
+
+        emitterId = emitter.emitterId;
+        schemaId = emitter.schemaId;
+        expirationDate = emitter.expirationDate;
+        registeringFee = emitter.fee;
+        updatingFee = _getEmitterUpdatingFee(_emitterId);
+        registryChainId = emitter.registryChainId;
+        owner = emitter.owner;
+    }
+
     /// @notice Registers new emitter
     /// @param _schemaId - Id of schema that would be used by the emitter
     /// @param _registryChainId - Id of the chain with registry
     /// @param _emitterAddress - Address of the emitters owner
     /// @param _expirationDate - Timestamp when emitter expires
-    /// @param _fee - Fee that would be collected by the emitter for registering and updating SID
+    /// @param _registeringFee - Fee that would be collected by the emitter for registering SID
+    /// @param _updatingFee - Fee that would be collected by the emitter for updating SID
     /// @param _signature - Operators signature with RegistryEmitterParams
     /// @return Id of the newly created emitter
     function registerEmitter(
@@ -341,7 +376,8 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         uint256 _registryChainId,
         address _emitterAddress,
         uint64 _expirationDate,
-        uint256 _fee,
+        uint256 _registeringFee,
+        uint256 _updatingFee,
         bytes calldata _signature
     ) public returns (bytes32) {
         if (_schemaId == bytes32(0)) revert SchemaIdInvalid();
@@ -360,7 +396,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
                     _schemaId,
                     _emitterAddress,
                     _registryChainId,
-                    _fee,
+                    _registeringFee,
                     _expirationDate
                 )
             )
@@ -372,10 +408,12 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
             emitterId,
             _schemaId,
             _expirationDate,
-            _fee,
+            _registeringFee,
             _registryChainId,
             _emitterAddress
         );
+
+        _setEmitterUpdatingFee(emitterId, _updatingFee);
 
         emit EmitterRegistered(emitterId, _emitterAddress, _registryChainId);
 
@@ -397,7 +435,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     /// @param _emitterId - Id of emitter that should be used for registering SID
     /// @param _schemaId - Id of schema that should
     /// @param _connectorId - Id of connector that should be used for sending registering message
-    /// @param _fee - Fee that would be added to emitter balance
+    /// @param _registeringFee - Fee that would be added to emitter balance for registering SID
     /// @param _registryChainId - Id of the chain with registry
     /// @param _expirationDate - Timestamp when SID expires
     /// @param _data - Data that would be sent with registering message
@@ -406,13 +444,13 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         bytes32 _emitterId,
         bytes32 _schemaId,
         uint32 _connectorId,
-        uint256 _fee,
+        uint256 _registeringFee,
         uint256 _registryChainId,
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
     ) internal {
-        emittersBalances[_emitterId] += _fee;
+        emittersBalances[_emitterId] += _registeringFee;
         protocolBalance += protocolFee;
 
         IConnector connector = router.getRoute(_connectorId, _registryChainId);
@@ -428,7 +466,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         uint256 quote = connector.quote(_registryChainId, payload);
 
-        uint256 totalFeeAmount = _fee + protocolFee + quote;
+        uint256 totalFeeAmount = _registeringFee + protocolFee + quote;
         if (msg.value < totalFeeAmount) revert WrongFeeAmount();
 
         connector.sendMessage{value: quote}(_registryChainId, payload);
@@ -439,7 +477,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     /// @notice Sends an update SID message to the registry
     /// @param _emitterId - Id of emitter that should be used for updating SID
     /// @param _connectorId - Id of connector that should be used for sending updating message
-    /// @param _fee - Fee that would be added to emitter balance
+    /// @param _updatingFee - Fee that would be added to emitter balance for updating SID
     /// @param _registryChainId - Id of the chain with registry
     /// @param _sidId - Id of SID that should be updated
     /// @param _expirationDate - Timestamp when SID expires
@@ -448,14 +486,14 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     function _sendUpdateSIDMessage(
         bytes32 _emitterId,
         uint32 _connectorId,
-        uint256 _fee,
+        uint256 _updatingFee,
         uint256 _registryChainId,
         bytes32 _sidId,
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
     ) internal {
-        emittersBalances[_emitterId] += _fee;
+        emittersBalances[_emitterId] += _updatingFee;
         protocolBalance += protocolFee;
 
         IConnector connector = router.getRoute(_connectorId, _registryChainId);
@@ -470,12 +508,27 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         uint256 quote = connector.quote(_registryChainId, payload);
 
-        uint256 totalFeeAmount = _fee + protocolFee + quote;
+        uint256 totalFeeAmount = _updatingFee + protocolFee + quote;
         if (msg.value < totalFeeAmount) revert WrongFeeAmount();
 
         connector.sendMessage{value: quote}(_registryChainId, payload);
 
         emit SentUpdateSIDMessage(_sidId, _connectorId, msg.sender, _registryChainId);
+    }
+
+    /// @notice Returns updating fee for the emitter
+    /// @param _emitterId - Id of the emitter
+    /// @return updatingFee - Updating fee for the emitter
+    function _getEmitterUpdatingFee(bytes32 _emitterId) internal view returns (uint256) {
+        bytes32 updatingFee = emittersAdditionalData[_emitterId]["updatingFee"];
+        return uint256(updatingFee);
+    }
+
+    /// @notice Sets updating fee for the emitter
+    /// @param _emitterId - Id of the emitter
+    /// @param _updatingFee - Updating fee for the emitter
+    function _setEmitterUpdatingFee(bytes32 _emitterId, uint256 _updatingFee) internal {
+        emittersAdditionalData[_emitterId]["updatingFee"] = bytes32(_updatingFee);
     }
 
     /// @notice Sets router address
