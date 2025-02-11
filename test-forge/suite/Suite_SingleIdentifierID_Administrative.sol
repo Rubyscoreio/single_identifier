@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 
-import {Emitter} from "contracts/types/Structs.sol";
+import {EmitterFull} from "../harness/Harness_SingleIdentifierID.sol";
 import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 
 import {Storage_SingleIdentifierID} from "test-forge/storage/Storage_SingleIdentifierID.sol";
@@ -187,12 +187,12 @@ abstract contract Suite_SingleIdentifierID_Administrative is Storage_SingleIdent
             - SetRouter event was emitted with the correct data
     */
     function testFuzz_SetEmitterBalance_Ok(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint256 _newBalance,
         address _admin
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
 
         /// Preparing environment
         singleId.helper_grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -200,13 +200,13 @@ abstract contract Suite_SingleIdentifierID_Administrative is Storage_SingleIdent
         singleId.helper_setEmitter(_emitter);
 
         vm.expectEmit();
-        emit SingleIdentifierID.SetEmitterBalance(_emitter.emitterId, _newBalance);
+        emit SingleIdentifierID.SetEmitterBalance(_emitter.basic.emitterId, _newBalance);
         vm.prank(_admin);
         /// Executing function
-        singleId.setEmitterBalance(_emitter.emitterId, _newBalance);
+        singleId.setEmitterBalance(_emitter.basic.emitterId, _newBalance);
 
         /// Asserting expectations
-        assertEq(singleId.emittersBalances(_emitter.emitterId), _newBalance, "Router was set incorrectly");
+        assertEq(singleId.emittersBalances(_emitter.basic.emitterId), _newBalance, "Router was set incorrectly");
     }
 
     /**
@@ -219,12 +219,12 @@ abstract contract Suite_SingleIdentifierID_Administrative is Storage_SingleIdent
             - execution reverts with the 'AccessControl: account 0x... is missing role 0x...' error
     */
     function testFuzz_SetEmitterBalance_RevertIf_SenderIsNotAnAdmin(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint256 _newBalance,
         address _sender
     ) public {
         /// Validating restrictions
-        vm.assume(_emitter.emitterId != bytes32(0));
+        vm.assume(_emitter.basic.emitterId != bytes32(0));
 
         /// Preparing environment
         singleId.helper_setEmitter(_emitter);
@@ -239,7 +239,7 @@ abstract contract Suite_SingleIdentifierID_Administrative is Storage_SingleIdent
         );
         vm.prank(_sender);
         /// Executing function
-        singleId.setEmitterBalance(_emitter.emitterId, _newBalance);
+        singleId.setEmitterBalance(_emitter.basic.emitterId, _newBalance);
     }
 
     /**
@@ -251,7 +251,7 @@ abstract contract Suite_SingleIdentifierID_Administrative is Storage_SingleIdent
             - execution reverts with the 'EmitterNotExists()' error
     */
     function testFuzz_SetEmitterBalance_RevertIf_EmitterNotExists(
-        Emitter memory _emitter,
+        EmitterFull memory _emitter,
         uint256 _newBalance,
         address _admin
     ) public {
@@ -261,6 +261,6 @@ abstract contract Suite_SingleIdentifierID_Administrative is Storage_SingleIdent
         vm.expectRevert(abi.encodeWithSignature("EmitterNotExists()"));
         vm.prank(_admin);
         /// Executing function
-        singleId.setEmitterBalance(_emitter.emitterId, _newBalance);
+        singleId.setEmitterBalance(_emitter.basic.emitterId, _newBalance);
     }
 }
