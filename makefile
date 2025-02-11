@@ -41,3 +41,21 @@ configureL0Connectors:
 	--via-ir \
 	-vvvv \
 #	--broadcast \
+
+deployHyperlaneConnector:
+	forge script scripts/DeployHyperlaneConnectorScript.s.sol:DeployHyperlaneConnectorScript \
+	$(chain) \
+	--sig "run(string)" \
+	--via-ir \
+	-vvvv \
+	--etherscan-api-key ${ETHERSCAN_API_KEY} \
+#	--broadcast \
+#	--verify \
+
+setUpHyperlaneConnectors:
+	forge script scripts/SetUpHyperlaneConnectors.s.sol:SetUpHyperlaneConnectors \
+	$(chains) \
+	--sig "runMultichain(string[])" \
+	--via-ir \
+	-vvvv \
+#	--broadcast \
