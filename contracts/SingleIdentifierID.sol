@@ -20,7 +20,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPSUpgradeable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     string public constant NAME = "Rubyscore_Single_Identifier_Id";
-    string public constant VERSION = "0.0.1";
+    string public constant VERSION = "0.0.2";
     bytes32 private constant TYPE_HASH =
     keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
@@ -37,6 +37,12 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     mapping(bytes32 emitterId => Emitter emitter) public emitters;
     /// @notice Sum of all fees charged by emitter in contract balance
     mapping(bytes32 emitterId => uint256 balance) public emittersBalances;
+
+    // v0.0.2
+    /// @notice Additional data for emitters
+    /// @dev Here you could store absolutely any additional data for emitters that fits in 256 bits
+    /// @dev For flexibility reasons data should be stored in bytes32 format and converted to necessary format manually
+    mapping(bytes32 emitterId => mapping(string varKey => bytes32 varValue)) public emittersAdditionalData;
     // Upgradeable storage end
 
     event EmitterRegistered(bytes32 indexed emitterId, address indexed emitterAddress, uint256 registryChainId);
