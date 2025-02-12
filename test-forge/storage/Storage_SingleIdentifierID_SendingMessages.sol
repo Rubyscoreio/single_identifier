@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {Storage_SingleIdentifierID} from "./Storage_SingleIdentifierID.sol";
+import {Storage_SingleIdentifierID_Fork} from "./Storage_SingleIdentifierID_Fork.sol";
 
 import {Emitter} from "contracts/types/Structs.sol";
 import {IConnector} from "contracts/interfaces/IConnector.sol";
@@ -10,10 +10,7 @@ import {SingleRouter} from "contracts/SingleRouter.sol";
 
 import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
-abstract contract Storage_SingleIdentifierID_SendingMessages is Storage_SingleIdentifierID {
-    address public admin = 0x0d0D5Ff3cFeF8B7B2b1cAC6B6C27Fd0846c09361;
-    address public operator = 0x381c031bAA5995D0Cc52386508050Ac947780815;
-
+abstract contract Storage_SingleIdentifierID_SendingMessages is Storage_SingleIdentifierID_Fork {
     uint256 public targetChainId = 8453;
     Emitter public emitter;
     uint32 public connectorId;
