@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Storage_SingleIdentifierID_Fork} from "./Storage_SingleIdentifierID_Fork.sol";
 
 import {Emitter} from "contracts/types/Structs.sol";
+import {EmitterFull} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 import {IConnector} from "contracts/interfaces/IConnector.sol";
 import {SingleIdentifierRegistry} from "contracts/SingleIdentifierRegistry.sol";
 import {SingleRouter} from "contracts/SingleRouter.sol";
@@ -30,8 +31,10 @@ abstract contract Storage_SingleIdentifierID_SendingMessages is Storage_SingleId
             schemaId,
             9999999999,
             fee,
-            block.chainid,
+            targetChainId,
             sender
         );
+
+        singleId.helper_setEmitter(EmitterFull(emitter, 0));
     }
 }

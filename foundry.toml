@@ -5,6 +5,7 @@ libs = ['node_modules', 'lib']
 test = 'test-forge'
 cache_path  = 'cache_forge'
 evm_version = 'london' # comment for fork testing
+optimizer = true
 
 [rpc_endpoints]
 mainnet = "https://mainnet.infura.io/v3/${INFURA_KEY}"
