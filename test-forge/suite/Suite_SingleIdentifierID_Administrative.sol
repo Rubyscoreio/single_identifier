@@ -9,9 +9,6 @@ import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 import {Storage_SingleIdentifierID} from "test-forge/storage/Storage_SingleIdentifierID.sol";
 
 abstract contract Suite_SingleIdentifierID_Administrative is Storage_SingleIdentifierID {
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-
     /**
         Target: SingleIdentifierID - setProtocolFee
         Checks: Correct execution

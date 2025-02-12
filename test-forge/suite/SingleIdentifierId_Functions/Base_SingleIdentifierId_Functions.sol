@@ -8,9 +8,6 @@ import {Storage_SingleIdentifierID} from "test-forge/storage/Storage_SingleIdent
 abstract contract Base_SingleIdentifierId_Functions is Storage_SingleIdentifierID {
     using ECDSA for bytes32;
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-
     function helper_sign(uint256 _privateKey, bytes32 _digest) public returns (bytes memory signature) {
         address signer = vm.addr(_privateKey);
 
