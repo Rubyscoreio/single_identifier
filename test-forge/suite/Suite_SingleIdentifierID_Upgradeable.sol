@@ -10,8 +10,6 @@ import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 import {Storage_SingleIdentifierID} from "test-forge/storage/Storage_SingleIdentifierID.sol";
 
 abstract contract Suite_SingleIdentifierID_Upgradeable is Storage_SingleIdentifierID {
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-
     /**
         Target: SingleIdentifierID - initialize
         Checks: Correct execution

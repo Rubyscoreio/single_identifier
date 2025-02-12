@@ -12,6 +12,8 @@ import {Harness_SingleIdentifierID} from "test-forge/harness/Harness_SingleIdent
 
 abstract contract Storage_SingleIdentifierID is Test {
     bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     address public constant _defaultAdmin = address(0xA11CE);
     address public constant _defaultOperator = address(0xB0B);
