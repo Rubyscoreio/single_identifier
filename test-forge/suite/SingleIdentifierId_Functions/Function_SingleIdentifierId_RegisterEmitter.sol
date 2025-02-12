@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
-
 import {Base_SingleIdentifierId_Functions} from "./Base_SingleIdentifierId_Functions.sol";
 import {EmitterFull} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
@@ -485,14 +483,7 @@ abstract contract Function_SingleIdentifierId_RegisterEmitter is Base_SingleIden
 
         bytes memory signature = helper_sign(operatorPrivateKey, registerEmitterDigest);
 
-        vm.expectRevert(
-            abi.encodePacked(
-                "AccessControl: account ",
-                StringsUpgradeable.toHexString(operator),
-                " is missing role ",
-                StringsUpgradeable.toHexString(uint256(OPERATOR_ROLE), 32)
-            )
-        );
+        expectMissingRole(operator, OPERATOR_ROLE);
         // Executing function
         singleId.registerEmitter(
             _emitter.basic.schemaId,
