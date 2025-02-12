@@ -29,7 +29,7 @@ import {Environment_SingleIdentifierID_SendingMessages_Taiko_SameChain} from "./
 import {Suite_SingleIdentifierID_Administrative} from "./suite/Suite_SingleIdentifierID_Administrative.sol";
 import {Suite_SingleIdentifierID_Upgradeable} from "./suite/Suite_SingleIdentifierID_Upgradeable.sol";
 import {Suite_SingleIdentifierID_SendingMessages} from "./suite/Suite_SingleIdentifierID_SendingMessages.sol";
-import {Suite_SingleIdentifierID_ProtocolFlow} from "./suite/Suite_SingleIdentifierID_ProtocolFlow.sol";
+import {Suite_SingleIdentifierID_Functions} from "./suite/Suite_SingleIdentifierID_Functions.sol";
 import {Suite_SingleIdentifierID_OnchainUpgrade} from "./suite/Suite_SingleIdentifierID_OnchainUpgrade.sol";
 
 contract SingleIdentifierIDTest_Administrative is
@@ -44,12 +44,12 @@ contract SingleIdentifierIDTest_Administrative_Upgraded is
 
 contract SingleIdentifierIDTest_ProtocolFlow is
     Environment_SingleIdentifierID,
-    Suite_SingleIdentifierID_ProtocolFlow
+    Suite_SingleIdentifierID_Functions
     {}
 
 contract SingleIdentifierIDTest_ProtocolFlow_Upgraded is
     Environment_SingleIdentifierID_Upgraded,
-    Suite_SingleIdentifierID_ProtocolFlow
+    Suite_SingleIdentifierID_Functions
     {}
 
 contract SingleIdentifierIDTest_Upgradeable is
