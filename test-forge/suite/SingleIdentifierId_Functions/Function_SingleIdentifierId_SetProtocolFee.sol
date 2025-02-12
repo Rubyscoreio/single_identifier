@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
-
 import {Base_SingleIdentifierId_Functions} from "./Base_SingleIdentifierId_Functions.sol";
 import {EmitterFull} from "test-forge/harness/Harness_SingleIdentifierID.sol";
 
@@ -46,14 +44,7 @@ abstract contract Function_SingleIdentifierId_SetProtocolFee is Base_SingleIdent
     function testFuzz_SetProtocolFee_RevertIf_SenderIsNotAnOperator(
         uint256 _fee
     ) public {
-        vm.expectRevert(
-            abi.encodePacked(
-                "AccessControl: account ",
-                StringsUpgradeable.toHexString(address(this)),
-                " is missing role ",
-                StringsUpgradeable.toHexString(uint256(OPERATOR_ROLE), 32)
-            )
-        );
+        expectMissingRole(address(this), OPERATOR_ROLE);
 
         singleId.setProtocolFee(_fee);
     }
