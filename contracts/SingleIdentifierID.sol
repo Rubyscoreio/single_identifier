@@ -146,11 +146,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         _sendRegisterSIDMessage(
             emitterId,
-            _schemaId,
             _connectorId,
-            _registeringFee,
-            _registryChainId,
-            _expirationDate,
             _data,
             _metadata
         );
@@ -185,11 +181,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
         _sendRegisterSIDMessage(
             _emitterId,
-            emitter.schemaId,
             _connectorId,
-            emitter.fee,
-            emitter.registryChainId,
-            emitter.expirationDate,
             _data,
             _metadata
         );
@@ -231,8 +223,6 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
         _sendUpdateSIDMessage(
             emitter.emitterId,
             _connectorId,
-            _getEmitterUpdatingFee(emitter.emitterId),
-            emitter.registryChainId,
             _sidId,
             _expirationDate,
             _data,
@@ -484,9 +474,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     /// @notice Calculates fee for registering SID
     /// @param _emitterId - Id of the emitter that will be used for registering SID
     /// @param _connectorId - Id of the connector that will be used for sending registering message
-    /// @param _registryChainId - Id of the chain with registry
     /// @param _user - Address of the user that will be registered, NOTE only that address will be allowed to register SID
-    /// @param _schemaId - Id of the schema that will be used for registering SID
     /// @param _expirationDate - Timestamp when SID expires
     /// @param _data - SID data
     /// @param _metadata - SID metadata
@@ -494,34 +482,30 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     function calculateRegisteringSidFee(
         bytes32 _emitterId,
         uint32 _connectorId,
-        uint256 _registryChainId,
         address _user,
-        bytes32 _schemaId,
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
     ) public view returns (uint256) {
-        IConnector connector = router.getRoute(_connectorId, _registryChainId);
-
         Emitter storage emitter = emitters[_emitterId];
         uint256 registeringFee = emitter.fee;
 
+        IConnector connector = router.getRoute(_connectorId, emitter.registryChainId);
         bytes memory payload = _composeRegisteringSidMessage(
-            _schemaId,
+            emitter.schemaId,
             _user,
             _expirationDate,
             _data,
             _metadata
         );
 
-        uint256 quote = connector.quote(_registryChainId, payload);
+        uint256 quote = connector.quote(emitter.registryChainId, payload);
         return registeringFee + protocolFee + quote;
     }
 
     /// @notice Calculates fee for updating SID
     /// @param _emitterId - Id of the emitter that will be used for updating SID
     /// @param _connectorId - Id of the connector that will be used for sending updating message
-    /// @param _registryChainId - Id of the chain with registry
     /// @param _sidId - Id of the SID that will be updated
     /// @param _expirationDate - Timestamp when SID expires
     /// @param _data - SID data
@@ -530,13 +514,13 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     function calculateUpdatingSidFee(
         bytes32 _emitterId,
         uint32 _connectorId,
-        uint256 _registryChainId,
         bytes32 _sidId,
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
     ) public view returns (uint256) {
-        IConnector connector = router.getRoute(_connectorId, _registryChainId);
+        Emitter storage emitter = emitters[_emitterId];
+        IConnector connector = router.getRoute(_connectorId, emitter.registryChainId);
 
         uint256 updatingFee = _getEmitterUpdatingFee(_emitterId);
 
@@ -547,7 +531,7 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
             _metadata
         );
 
-        uint256 quote = connector.quote(_registryChainId, payload);
+        uint256 quote = connector.quote(emitter.registryChainId, payload);
         return updatingFee + protocolFee + quote;
     }
 
@@ -611,51 +595,47 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
 
     /// @notice Sends a register SID message to the registry
     /// @param _emitterId - Id of emitter that should be used for registering SID
-    /// @param _schemaId - Id of schema that should
     /// @param _connectorId - Id of connector that should be used for sending registering message
-    /// @param _registeringFee - Fee that would be added to emitter balance for registering SID
-    /// @param _registryChainId - Id of the chain with registry
-    /// @param _expirationDate - Timestamp when SID expires
     /// @param _data - Data that would be sent with registering message
     /// @param _metadata - Metadata that would be sent with registering message
     function _sendRegisterSIDMessage(
         bytes32 _emitterId,
-        bytes32 _schemaId,
         uint32 _connectorId,
-        uint256 _registeringFee,
-        uint256 _registryChainId,
-        uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
     ) internal {
-        emittersBalances[_emitterId] += _registeringFee;
+        Emitter storage emitter = emitters[_emitterId];
+
+        bytes32 schemaId = emitter.schemaId;
+        uint256 registeringFee = emitter.fee;
+        uint256 registryChainId = emitter.registryChainId;
+
+        emittersBalances[_emitterId] += registeringFee;
         protocolBalance += protocolFee;
 
-        IConnector connector = router.getRoute(_connectorId, _registryChainId);
+        IConnector connector = router.getRoute(_connectorId, registryChainId);
         bytes memory payload = _composeRegisteringSidMessage(
-            _schemaId,
+            schemaId,
             msg.sender,
-            _expirationDate,
+            emitter.expirationDate,
             _data,
             _metadata
         );
 
-        uint256 quote = connector.quote(_registryChainId, payload);
+        uint256 quote = connector.quote(registryChainId, payload);
 
-        uint256 totalFeeAmount = _registeringFee + protocolFee + quote;
+        uint256 totalFeeAmount = registeringFee + protocolFee + quote;
 
         if (msg.value < totalFeeAmount) revert WrongFeeAmount();
 
-        connector.sendMessage{value: quote}(_registryChainId, payload);
+        connector.sendMessage{value: quote}(registryChainId, payload);
 
-        emit SentRegisterSIDMessage(_schemaId, _connectorId, msg.sender, _registryChainId);
+        emit SentRegisterSIDMessage(schemaId, _connectorId, msg.sender, registryChainId);
     }
 
     /// @notice Sends an update SID message to the registry
     /// @param _emitterId - Id of emitter that should be used for updating SID
     /// @param _connectorId - Id of connector that should be used for sending updating message
-    /// @param _updatingFee - Fee that would be added to emitter balance for updating SID
-    /// @param _registryChainId - Id of the chain with registry
     /// @param _sidId - Id of SID that should be updated
     /// @param _expirationDate - Timestamp when SID expires
     /// @param _data - Data that would be sent with updating message
@@ -663,17 +643,20 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
     function _sendUpdateSIDMessage(
         bytes32 _emitterId,
         uint32 _connectorId,
-        uint256 _updatingFee,
-        uint256 _registryChainId,
         bytes32 _sidId,
         uint64 _expirationDate,
         bytes calldata _data,
         string calldata _metadata
     ) internal {
-        emittersBalances[_emitterId] += _updatingFee;
+        Emitter storage emitter = emitters[_emitterId];
+
+        uint256 updatingFee = _getEmitterUpdatingFee(_emitterId);
+        uint256 registryChainId = emitter.registryChainId;
+
+        emittersBalances[_emitterId] += updatingFee;
         protocolBalance += protocolFee;
 
-        IConnector connector = router.getRoute(_connectorId, _registryChainId);
+        IConnector connector = router.getRoute(_connectorId, registryChainId);
         bytes memory payload = _composeUpdatingSidMessage(
             _sidId,
             _expirationDate,
@@ -681,14 +664,14 @@ contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPS
             _metadata
         );
 
-        uint256 quote = connector.quote(_registryChainId, payload);
+        uint256 quote = connector.quote(registryChainId, payload);
 
-        uint256 totalFeeAmount = _updatingFee + protocolFee + quote;
+        uint256 totalFeeAmount = updatingFee + protocolFee + quote;
         if (msg.value < totalFeeAmount) revert WrongFeeAmount();
 
-        connector.sendMessage{value: quote}(_registryChainId, payload);
+        connector.sendMessage{value: quote}(registryChainId, payload);
 
-        emit SentUpdateSIDMessage(_sidId, _connectorId, msg.sender, _registryChainId);
+        emit SentUpdateSIDMessage(_sidId, _connectorId, msg.sender, registryChainId);
     }
 
     /// @notice Returns updating fee for the emitter

@@ -32,11 +32,7 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
     ) public payable {
         _sendRegisterSIDMessage(
             _emitterId,
-            _schemaId,
             _connectorId,
-            _fee,
-            _registryChainId,
-            _expirationDate,
             _data,
             _metadata
         );
@@ -55,8 +51,6 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
         _sendUpdateSIDMessage(
             _emitterId,
             _connectorId,
-            _fee,
-            _registryChainId,
             _sidId,
             _expirationDate,
             _data,
