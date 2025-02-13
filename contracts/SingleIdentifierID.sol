@@ -20,7 +20,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 contract SingleIdentifierID is AccessControlUpgradeable, EIP712Upgradeable, UUPSUpgradeable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     string public constant NAME = "Rubyscore_Single_Identifier_Id";
-    string public constant VERSION = "0.0.2";
+    string public constant VERSION = "0.0.1";// actually 0.0.2
     bytes32 private constant TYPE_HASH =
     keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
