@@ -7,6 +7,11 @@ import {Emitter} from "contracts/types/Structs.sol";
 import {SingleIdentifierID} from "contracts/SingleIdentifierID.sol";
 import {SingleRouter} from "contracts/SingleRouter.sol";
 
+struct EmitterFull {
+    Emitter basic;
+    uint256 updatingFee;
+}
+
 contract Harness_SingleIdentifierID is SingleIdentifierID {
     bytes32 public constant TYPE_HASH =
     keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
@@ -27,11 +32,7 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
     ) public payable {
         _sendRegisterSIDMessage(
             _emitterId,
-            _schemaId,
             _connectorId,
-            _fee,
-            _registryChainId,
-            _expirationDate,
             _data,
             _metadata
         );
@@ -50,8 +51,6 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
         _sendUpdateSIDMessage(
             _emitterId,
             _connectorId,
-            _fee,
-            _registryChainId,
             _sidId,
             _expirationDate,
             _data,
@@ -59,8 +58,13 @@ contract Harness_SingleIdentifierID is SingleIdentifierID {
         );
     }
 
-    function helper_setEmitter(Emitter memory _emitter) public {
-        emitters[_emitter.emitterId] = _emitter;
+    function exposed_setEmitterUpdatingFee(bytes32 _emitterId, uint256 _updatingFee) public {
+        _setEmitterUpdatingFee(_emitterId, _updatingFee);
+    }
+
+    function helper_setEmitter(EmitterFull memory _emitter) public {
+        emitters[_emitter.basic.emitterId] = _emitter.basic;
+        _setEmitterUpdatingFee(_emitter.basic.emitterId, _emitter.updatingFee);
     }
 
     function helper_setRouter(address _router) public {
