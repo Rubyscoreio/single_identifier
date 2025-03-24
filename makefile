@@ -34,6 +34,16 @@ deploySingleId:
 #	--broadcast \
 #	--verify \
 
+extendProtocolWithChain:
+	forge script scripts/DeployProtocol.s.sol:DeployProtocolScript \
+	$(chain) \
+	--sig "run(string)" \
+	--via-ir \
+	-vvvv \
+	--etherscan-api-key ${ETHERSCAN_API_KEY} \
+#	--broadcast \
+#	--verify \
+
 configureL0Connectors:
 	forge script scripts/ConfigureL0Connectors.s.sol:ConfigureL0ConnectorsScript \
 	$(chains) \
@@ -59,3 +69,7 @@ setUpHyperlaneConnectors:
 	--via-ir \
 	-vvvv \
 #	--broadcast \
+
+checkHealth:
+	forge script scripts/CheckProtocolCrossChainHealth.s.sol:CheckProtocolCrossChainHealthScript \
+	--via-ir \
