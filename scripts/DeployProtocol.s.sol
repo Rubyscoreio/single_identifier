@@ -117,7 +117,7 @@ contract DeployProtocolScript is ScriptWithOnchainEnv {
         return(SingleRouter(address(proxy)));
     }
 
-    function _deployRegistry() internal returns(SingleIdentifierRegistry) {
+    function _deployRegistry(SingleRouter router) internal returns(SingleIdentifierRegistry) {
         vm.broadcast(deployerPK);
         SingleIdentifierRegistry registry = new SingleIdentifierRegistry();
 
@@ -125,6 +125,9 @@ contract DeployProtocolScript is ScriptWithOnchainEnv {
 
         vm.broadcast(deployerPK);
         ERC1967Proxy proxy = new ERC1967Proxy(address(registry), initializerPayload);
+
+        vm.broadcast(deployerPK);
+        SingleIdentifierRegistry(address(proxy)).setRouter(address(router));
 
         vm.label(address(proxy), "P_SingleIdentifierRegistry");
 
