@@ -33,14 +33,15 @@ contract ScriptWithOnchainEnv is Script {
     mapping(uint256 => ChainEnv) public chainIdToEnv;
     mapping(string => uint256) public chainNameToId;
 
-    string[7] public deployedChains = [
+    string[8] public deployedChains = [
         "arbitrum",
         "base",
         "linea",
         "optimism",
         "scroll",
         "taiko",
-        "zkevm"
+        "zkevm",
+        "polygon"
     ];
 
     function _setupChains() internal {
@@ -77,6 +78,11 @@ contract ScriptWithOnchainEnv is Script {
         _setUpChainEnv("zkevm",
             0x389452F3AA4B82C19bf8dFC2943Ca28E9f4EDA4A,
             0x9456E02Ef02C0F5256a559ecf7535356Aeab8647
+        );
+
+        _setUpChainEnv("polygon",
+            0x3d52d95D58fCb53814ea37d580601D2AF2B4CC98,
+            0x4D1E2145082d0AB0fDa4a973dC4887C7295e21aB
         );
     }
 
