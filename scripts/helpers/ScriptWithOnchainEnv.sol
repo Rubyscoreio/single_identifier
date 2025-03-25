@@ -2,6 +2,7 @@
 pragma solidity ^0.8.10;
 
 import "lib/forge-std/src/Script.sol";
+import "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 
 import {HyperlaneConnector} from "contracts/connectors/HyperlaneConnector.sol";
 import {LayerZeroConnector} from "contracts/connectors/LayerZeroConnector.sol";
@@ -13,25 +14,34 @@ import {SingleRouter} from "contracts/SingleRouter.sol";
 
 contract ScriptWithOnchainEnv is Script {
     struct ChainEnv {
+        uint256 chainId;
+        string chainName;
         SingleIdentifierID singleId;
         SingleIdentifierRegistry registry;
         SingleRouter router;
         SameChainConnector sameChainConnector;
         HyperlaneConnector hyperlaneConnector;
         LayerZeroConnector l0Connector;
+        uint256 hyperlaneCustomChainId;
+        uint256 l0CustomChainId;
     }
+
+    uint256[] public nativeChainIds;
+    uint256[] public l0ChainIds;
+    uint256[] public hyperlaneChainIds;
 
     mapping(uint256 => ChainEnv) public chainIdToEnv;
     mapping(string => uint256) public chainNameToId;
 
-    string[7] public deployedChains = [
+    string[8] public deployedChains = [
         "arbitrum",
         "base",
         "linea",
         "optimism",
         "scroll",
         "taiko",
-        "zkevm"
+        "zkevm",
+        "polygon"
     ];
 
     function _setupChains() internal {
@@ -69,6 +79,11 @@ contract ScriptWithOnchainEnv is Script {
             0x389452F3AA4B82C19bf8dFC2943Ca28E9f4EDA4A,
             0x9456E02Ef02C0F5256a559ecf7535356Aeab8647
         );
+
+        _setUpChainEnv("polygon",
+            0x3d52d95D58fCb53814ea37d580601D2AF2B4CC98,
+            0x4D1E2145082d0AB0fDa4a973dC4887C7295e21aB
+        );
     }
 
     function _setUpChainEnv(string memory _chainName, address _singleId, address _registry) internal {
@@ -77,18 +92,28 @@ contract ScriptWithOnchainEnv is Script {
         uint256 chainId = block.chainid;
         chainNameToId[_chainName] = chainId;
 
-        console.log("chainId: ", chainId);
-
         SingleIdentifierID singleId = SingleIdentifierID(_singleId);
         SingleRouter router = singleId.router();
 
+        LayerZeroConnector l0Connector = LayerZeroConnector(address(router.connectors(2)));
+
+        ILayerZeroEndpointV2 l0Endpoint = l0Connector.endpoint();
+
+        nativeChainIds.push(chainId);
+        l0ChainIds.push(l0Endpoint.eid());
+        hyperlaneChainIds.push(chainId);
+
         chainIdToEnv[chainId] = ChainEnv(
+            chainId,
+            _chainName,
             singleId,
             SingleIdentifierRegistry(_registry),
             router,
             SameChainConnector(address(router.connectors(0))),
             HyperlaneConnector(address(router.connectors(1))),
-            LayerZeroConnector(address(router.connectors(2)))
+            LayerZeroConnector(address(router.connectors(2))),
+            chainId,
+            l0Endpoint.eid()
         );
     }
 }
