@@ -41,7 +41,7 @@ contract DeployProtocolScript is ScriptWithOnchainEnv {
     /// @notice LayerZero endpoint mailbox contract
     /// @dev check here: https://docs.layerzero.network/v2/deployments/deployed-contracts
     address constant public L0_ENDPOINT = 0x1a44076050125825900e736c501f859c50fE728c;
-    uint128 constant public L0_GAS_LIMIT = 50000;
+    uint128 constant public L0_GAS_LIMIT = 500000;
 
     uint256 public deployerPK;
 
