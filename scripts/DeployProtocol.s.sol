@@ -32,7 +32,7 @@ contract DeployProtocolScript is ScriptWithOnchainEnv {
     /// @dev check here: https://docs.hyperlane.xyz/docs/reference/addresses/interchain-gas-paymaster
     address constant public HYPERLANE_IGP = 0x0071740Bf129b05C4684abfbBeD248D80971cce2;
 
-    uint128 constant public HYPERLANE_GAS_LIMIT = 50000;
+    uint128 constant public HYPERLANE_GAS_LIMIT = 500000;
 
     /// @notice Hyperlane mailbox contract
     /// @dev check here: https://docs.hyperlane.xyz/docs/reference/addresses/mailbox-addresses
